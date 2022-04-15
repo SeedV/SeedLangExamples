@@ -33,7 +33,7 @@ namespace CoroutineActions {
 
     // Runs the task.
     public IEnumerator Run() {
-      return TaskEntry();
+      yield return TaskEntry();
     }
   }
 
@@ -51,7 +51,7 @@ namespace CoroutineActions {
 
     // Runs the task while passing its required argument in.
     public IEnumerator Run() {
-      return TaskEntry(Arg);
+      yield return TaskEntry(Arg);
     }
   }
 
@@ -71,7 +71,7 @@ namespace CoroutineActions {
 
     // Runs the task while passing its required arguments in.
     public IEnumerator Run() {
-      return TaskEntry(Arg1, Arg2);
+      yield return TaskEntry(Arg1, Arg2);
     }
   }
 
@@ -93,7 +93,7 @@ namespace CoroutineActions {
 
     // Runs the task while passing its required arguments in.
     public IEnumerator Run() {
-      return TaskEntry(Arg1, Arg2, Arg3);
+      yield return TaskEntry(Arg1, Arg2, Arg3);
     }
   }
 
@@ -117,7 +117,7 @@ namespace CoroutineActions {
 
     // Runs the task while passing its required arguments in.
     public IEnumerator Run() {
-      return TaskEntry(Arg1, Arg2, Arg3, Arg4);
+      yield return TaskEntry(Arg1, Arg2, Arg3, Arg4);
     }
   }
 }
