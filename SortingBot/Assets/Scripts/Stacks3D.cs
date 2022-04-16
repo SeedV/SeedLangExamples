@@ -28,7 +28,7 @@ public class Stacks3D : MonoBehaviour {
   private float _cubeInitialY;
   private GameObject _markerRef;
 
-  // Clears a stack with animmation.
+  // Clears a stack with animations.
   public IEnumerator Clear(int stackIndex) {
     Debug.Assert(stackIndex >= 0 && stackIndex < Config.StackCount);
     for (int i = _stackCubes[stackIndex].Count - 1; i >= 0; i--) {
