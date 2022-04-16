@@ -38,7 +38,7 @@ public class Stacks2D : MonoBehaviour {
     _stackCubeNums[stackIndex] = 0;
   }
 
-  // Fills a stack with the given number of cubes with animation.
+  // Fills a stack with the given number of cubes with animations.
   public IEnumerator Setup(int stackIndex, int cubeCount) {
     Debug.Assert(stackIndex >= 0 && stackIndex < Config.StackCount);
     Debug.Assert(cubeCount >= 0 && cubeCount <= Config.MaxCubesPerStack);
