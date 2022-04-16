@@ -43,7 +43,7 @@ public class Stacks2D : MonoBehaviour {
     Debug.Assert(stackIndex >= 0 && stackIndex < Config.StackCount);
     Debug.Assert(cubeCount >= 0 && cubeCount <= Config.MaxCubesPerStack);
     yield return Clear(stackIndex);
-    for (int i = 0; i < cubeCount; i ++) {
+    for (int i = 0; i < cubeCount; i++) {
       yield return new WaitForSeconds(_cubeAnimationInterval);
       var cube2D = _stackCubes[stackIndex][i];
       cube2D.GetComponent<Image>().color = Config.GetStackColor(StackState.Normal);
