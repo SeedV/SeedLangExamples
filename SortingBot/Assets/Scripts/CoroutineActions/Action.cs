@@ -28,7 +28,6 @@ namespace CoroutineActions {
     public bool IsRunning => _runningCoroutines.Any(coroutine => !(coroutine is null));
 
     private MonoBehaviour _hostObject;
-    private Mutex _mutex = new Mutex();
 
     // hostObject must be a Unity MonoBehaviour object that can start a coroutine. tasks may contain
     // one or more coroutine tasks.
@@ -47,7 +46,6 @@ namespace CoroutineActions {
     // Tries to start all the task coroutines in a thread-safe way. Returns true if all the task
     // coroutines have been started.
     public bool TryStart() {
-      _mutex.WaitOne();
       if (!IsRunning) {
         for (int taskId = 0; taskId < _tasks.Count; taskId++) {
           _runningCoroutines[taskId] = _hostObject.StartCoroutine(CoroutineWrapper(taskId));
@@ -55,20 +53,17 @@ namespace CoroutineActions {
       } else {
         return false;
       }
-      _mutex.ReleaseMutex();
       return true;
     }
 
     // Stops all the task coroutines in a thread-safe way.
     public void Stop() {
-      _mutex.WaitOne();
       if (IsRunning) {
         for (int taskId = 0; taskId < _tasks.Count; taskId++) {
           _hostObject.StopCoroutine(_runningCoroutines[taskId]);
           _runningCoroutines[taskId] = null;
         }
       }
-      _mutex.ReleaseMutex();
     }
 
     private IEnumerator CoroutineWrapper(int taskId) {

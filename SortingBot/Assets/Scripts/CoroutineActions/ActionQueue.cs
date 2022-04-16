@@ -35,7 +35,7 @@ namespace CoroutineActions {
     private Action _currentAction = null;
     private bool _isStopping = false;
 
-    public bool IsEmpty() => _queue.Count == 0 && _currentAction is null;
+    public bool IsEmpty => _queue.Count == 0 && _currentAction is null;
 
     // Enqueues an action to the tail of the queue. This method can be called from different
     // threads in parallel.
@@ -55,7 +55,7 @@ namespace CoroutineActions {
     // A coroutine to run the queued actions until the queue is empty. This method must be called
     // from the main Unity thread, with Unity's StartCoroutine() method.
     public IEnumerator RunUntilEmpty() {
-      while (!_isStopping && !IsEmpty()) {
+      while (!_isStopping && !IsEmpty) {
         OnUpdate();
         yield return null;
       }
@@ -73,7 +73,7 @@ namespace CoroutineActions {
     // called from the main Unity thread repeatedly.
     //
     // Typically, you need to call this method in Update() or FixedUpdate() of a MonoBehaviour
-    // object. You don't need this method if you run the queued actions with Run() or
+    // object. You don't need to call this method if you run the queued actions with Run() or
     // RunUntilEmpty().
     public void OnUpdate() {
       if (!(_currentAction is null) && _currentAction.IsRunning) {
