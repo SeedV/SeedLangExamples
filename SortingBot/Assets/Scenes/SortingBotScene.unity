@@ -2466,7 +2466,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 580553cb52aed46eb96d97dc2b36b799, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CodeEditor: {fileID: 512731458}
+  InputField: {fileID: 512731458}
 --- !u!1 &525627404
 GameObject:
   m_ObjectHideFlags: 0
@@ -6891,13 +6891,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '1234
-
-    2234
-
-    3434
-
-    4454'
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ccfe4ac0c44cc4cdea3cda79ce65caee, type: 2}
   m_sharedMaterial: {fileID: -6986066140870928384, guid: ccfe4ac0c44cc4cdea3cda79ce65caee, type: 2}

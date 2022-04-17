@@ -1,9 +1,26 @@
+// Copyright 2021-2022 The SeedV Lab.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
+// TODO: The following code is only used to mimic SeedLang's syntax parser API, for testing
+// purposes. Delete this code once the SeedLang plugin is ready.
+
 namespace CodeEditor {
+  // BEGIN - code pieces copied from SeedLang.
   public enum TokenType {
     // VS Code standard token types.
     Class,             // For identifiers that declare or reference a class type.
@@ -189,43 +206,53 @@ namespace CodeEditor {
       return $"{Type} {Range}";
     }
   }
+  // END - code pieces copied from SeedLang.
 
   public static class MockSyntaxParser {
+    // A mock-up implementation to mimic SeedLang's syntax parsing, only returning two kinds of
+    // token types: TokenType.Number for integer number tokens and TokenType.Label for other tokens.
     public static void ParseSyntaxTokens(string code, out IReadOnlyList<TokenInfo> syntaxTokens) {
+      var tokens = new List<TokenInfo>();
       int line = 1;
       int col = 0;
       int endCol = 0;
-      var tokens = new List<TokenInfo>();
       var tokenLen = 0;
+      var tokenType = TokenType.Number;
       foreach (char c in code) {
         if (c == '\n') {
           if (tokenLen > 0) {
-            OutputToken(tokens, line, endCol - tokenLen + 1, endCol);
+            OutputToken(tokenType, line, endCol - tokenLen + 1, endCol, tokens);
             tokenLen = 0;
+            tokenType = TokenType.Number;
           }
           line += 1;
           col = 0;
         } else if (c == ' ' || c == '\t') {
           if (tokenLen > 0) {
-            OutputToken(tokens, line, endCol - tokenLen + 1, endCol);
+            OutputToken(tokenType, line, endCol - tokenLen + 1, endCol, tokens);
             tokenLen = 0;
+            tokenType = TokenType.Number;
           }
           col++;
         } else {
           tokenLen++;
+          if (!char.IsDigit(c)) {
+            tokenType = TokenType.Label;
+          }
           endCol = col;
           col++;
         }
       }
       if (tokenLen > 0) {
-        OutputToken(tokens, line, endCol - tokenLen + 1, endCol);
+        OutputToken(tokenType, line, endCol - tokenLen + 1, endCol, tokens);
       }
       syntaxTokens = tokens;
     }
 
-    public static void OutputToken(List<TokenInfo> tokens, int line, int startCol, int endCol) {
+    public static void OutputToken(TokenType type, int line, int startCol, int endCol,
+                                   List<TokenInfo> tokens) {
       var range = new TextRange(line, startCol, line, endCol);
-      var tokenInfo = new TokenInfo(TokenType.Keyword, range);
+      var tokenInfo = new TokenInfo(type, range);
       tokens.Add(tokenInfo);
     }
   }
