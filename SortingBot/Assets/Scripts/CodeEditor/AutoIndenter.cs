@@ -12,48 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
 namespace CodeEditor {
   public static class AutoIndenter {
-    private const char _ret = '\n';
-    private const char _tab = '\t';
-
-    // TODO: this definition is specific for Python language. Make a general definition to cover
-    // different languages.
-    private static readonly HashSet<char> _endCharsToAddIndent = new HashSet<char> {
-      ':', '(', '{', '['
-    };
-
-    // Given the typed code and the current caret pos, calculates if the current input pos needs to
+    // Given the input code and the current caret pos, calculates if the current input pos needs to
     // be auto indented.
     //
-    // Returns true if the current input pos needs to be auto indented. The output arguments newCode
-    // and newCaretPos contain the indented text and caret pos.
+    // Returns true if the current input pos needs auto-indention. Also outputs the indented text
+    // and the new caret pos.
     //
-    // Return false if the current input pos does not need auto-indention. In this case, newCode
-    // will be set to null and newCaretPos will be set to 0.
+    // Return false if the current input pos doesn't need auto-indention. In this case, newCode will
+    // be set to null and newCaretPos will be set to 0.
+    //
+    // TODO: Currently we simply use TABs to indent the code. Support TAB-as-spaces later.
     public static bool AutoIndent(string code, int caretPos,
                                   out string newCode, out int newCaretPos) {
       newCode = null;
       newCaretPos = 0;
-      if (caretPos >= 1 && code[caretPos - 1] == _ret) {
+      if (caretPos >= 1 && code[caretPos - 1] == EditorConfig.Ret) {
         int lastLineEndPos = caretPos - 1;
         int lastLineStartPos = lastLineEndPos;
-        while (lastLineStartPos >= 1 && code[lastLineStartPos - 1] != _ret) {
+        while (lastLineStartPos >= 1 && code[lastLineStartPos - 1] != EditorConfig.Ret) {
           lastLineStartPos--;
         }
-        if (code[lastLineStartPos] == _ret) {
+        if (code[lastLineStartPos] == EditorConfig.Ret) {
           lastLineStartPos++;
         }
         if (lastLineStartPos < lastLineEndPos) {
           string lastLine = code.Substring(lastLineStartPos, lastLineEndPos - lastLineStartPos);
-          Debug.Log(lastLine);
           int lastLineLeadingSpacesEndPos = GetLeadingSpacesEndPos(lastLine);
           int lastLineLastCharPos = GetLastNonSpaceCharPos(lastLine);
-          Debug.Log($"{caretPos} {lastLineLeadingSpacesEndPos} {lastLineLastCharPos}");
 
           var autoIndentText = new StringBuilder();
           autoIndentText.Append(code.Substring(0, caretPos));
@@ -61,12 +51,10 @@ namespace CodeEditor {
             autoIndentText.Append(
                 code.Substring(lastLineStartPos, lastLineLeadingSpacesEndPos + 1));
           }
-          Debug.Log($"{autoIndentText.Length}");
           if (lastLineLastCharPos >= 0 &&
-              GetAdditionalIndent(lastLine[lastLineLastCharPos], out string additionalIndent)) {
+              AutoIncreaseIndent(lastLine[lastLineLastCharPos], out string additionalIndent)) {
             autoIndentText.Append(additionalIndent);
           }
-          Debug.Log($"{autoIndentText.Length}");
           newCaretPos = autoIndentText.Length;
           if (caretPos < code.Length) {
             autoIndentText.Append(code.Substring(caretPos, code.Length - caretPos));
@@ -94,9 +82,13 @@ namespace CodeEditor {
       return i - 1;
     }
 
-    private static bool GetAdditionalIndent(char lastLineLastChar, out string additionalIndent) {
-      if (_endCharsToAddIndent.Contains(lastLineLastChar)) {
-        additionalIndent = _tab.ToString();
+    // Determines if the current line needs to auto-increase the indention level. If so, outputs the
+    // additional spaces as a string via additionalIndent.
+    //
+    // TODO: support auto-decreasing the indention level too.
+    private static bool AutoIncreaseIndent(char lastLineLastChar, out string additionalIndent) {
+      if (EditorConfig.EndCharsToIncreaseIndent.Contains(lastLineLastChar)) {
+        additionalIndent = EditorConfig.Tab.ToString();
         return true;
       } else {
         additionalIndent = null;

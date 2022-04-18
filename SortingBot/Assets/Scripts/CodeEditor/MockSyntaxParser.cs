@@ -14,53 +14,15 @@
 
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 // TODO: The following code is only used to mimic SeedLang's syntax parser API, for testing
-// purposes. Delete this code once the SeedLang plugin is ready.
+// purposes. Most of the following code pieces are directly copied from SeedLang. Delete this code
+// once the real SeedLang plugin is ready.
 
 namespace CodeEditor {
-  // BEGIN - code pieces copied from SeedLang.
   public enum TokenType {
-    // VS Code standard token types.
-    Class,             // For identifiers that declare or reference a class type.
-    Comment,           // For tokens that represent a comment.
-    Decorator,         // For identifiers that declare or reference decorators and annotations.
-    Enum,              // For identifiers that declare or reference an enumeration type.
-    EnumMember,        // For identifiers that declare or reference an enumeration property,
-                       // constant, or member.
-    Event,             // For identifiers that declare an event property.
-    Function,          // For identifiers that declare a function.
-    Interface,         // For identifiers that declare or reference an interface type.
-    Keyword,           // For tokens that represent a language keyword.
-    Label,             // For identifiers that declare a label.
-    Macro,             // For identifiers that declare a macro.
-    Method,            // For identifiers that declare a member function or method.
-    Namespace,         // For identifiers that declare or reference a namespace, module, or package.
-    Number,            // For tokens that represent a number literal.
-    Operator,          // For tokens that represent an operator.
-    Parameter,         // For identifiers that declare or reference a function or method parameters.
-    Property,          // For identifiers that declare or reference a member property, member field,
-                       // or member variable.
-    Regexp,            // For tokens that represent a regular expression literal.
-    String,            // For tokens that represent a string literal.
-    Struct,            // For identifiers that declare or reference a struct type.
-    Type,              // For identifiers that declare or reference a type that is not covered
-                       // above.
-    TypeParameter,     // For identifiers that declare or reference a type parameter.
-    Variable,          // For identifiers that declare or reference a local or global variable.
-
-    // Extended token types.
-    Boolean,           // For tokens that represent a boolean literal.
-    CloseBrace,        // For tokens that represent a curly bracket.
-    CloseBracket,      // For tokens that represent a square bracket.
-    CloseParenthesis,  // For tokens that represent a parenthesis.
-    Nil,               // For tokens that represent a nil literal.
-    OpenBrace,         // For tokens that represent a curly bracket.
-    OpenBracket,       // For tokens that represent a square bracket.
-    OpenParenthesis,   // For tokens that represent a parenthesis.
-    Symbol,            // For tokens that represent an unclassified symbol.
-    Unknown,           // Unknown token type.
+    Label,
+    Number,
   }
 
   // An immutable class to represent a position in a plaintext source code.
@@ -206,7 +168,6 @@ namespace CodeEditor {
       return $"{Type} {Range}";
     }
   }
-  // END - code pieces copied from SeedLang.
 
   public static class MockSyntaxParser {
     // A mock-up implementation to mimic SeedLang's syntax parsing, only returning two kinds of
