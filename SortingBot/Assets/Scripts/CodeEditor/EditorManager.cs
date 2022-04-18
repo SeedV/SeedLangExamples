@@ -101,9 +101,8 @@ namespace CodeEditor {
 
     private void UpdateLineNoText() {
       // Note that InputField.text is not suitable for the following calculation, since
-      // InputText.text contains an extra leading zero-width space '\u200B' for layout purposes. The
-      // text positions managed by InputText.textInfo.lineInfo are specific for InputText.text,
-      // instead of InputField.text.
+      // InputField.text contains an extra leading zero-width space '\u200B' for layout purposes.
+      // _inputText.text and _inputText.textInfo must be used instead.
       string inputText = _inputText.text;
       var lineNoString = new StringBuilder();
       int lineNo = 1;
