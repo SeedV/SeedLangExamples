@@ -114,9 +114,9 @@ namespace CodeEditor {
           lineNoString.AppendLine($"{lineNo++,4}");
           isNewLine = false;
         } else {
-          lineNoString.AppendLine("");
+          lineNoString.AppendLine();
         }
-        isNewLine = currentLine.EndsWith("\n");
+        isNewLine = (currentLine[currentLine.Length - 1] == EditorConfig.Ret);
       }
       _lineNoText.text = lineNoString.ToString();
     }
