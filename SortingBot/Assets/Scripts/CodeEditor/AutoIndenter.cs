@@ -37,9 +37,6 @@ namespace CodeEditor {
         while (lastLineStartPos >= 1 && code[lastLineStartPos - 1] != EditorConfig.Ret) {
           lastLineStartPos--;
         }
-        if (code[lastLineStartPos] == EditorConfig.Ret) {
-          lastLineStartPos++;
-        }
         if (lastLineStartPos < lastLineEndPos) {
           string lastLine = code.Substring(lastLineStartPos, lastLineEndPos - lastLineStartPos);
           int lastLineLeadingSpacesEndPos = GetLeadingSpacesEndPos(lastLine);

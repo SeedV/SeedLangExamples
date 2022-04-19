@@ -18,7 +18,7 @@ using UnityEngine;
 
 namespace CodeEditor {
   public static class CodeFomatter {
-    // Formats a source code and returns the formatted colorful code in Unity's rich text format.
+    // Formats source code and returns the formatted colorful code in Unity's rich text format.
     public static string Format(string code, IReadOnlyList<TokenInfo> tokens) {
       Debug.Assert(!(code is null) && !(tokens is null));
       var lines = code.Split(EditorConfig.Ret);
@@ -37,39 +37,41 @@ namespace CodeEditor {
         int startCol = token.Range.Start.Column;
         int endCol = token.Range.End.Column;
 
-        // Reads source code until the start line of the token is met.
-        while (lineIndex < startLine) {
-          while (charIndex < lines[lineIndex].Length) {
-            coloredTextBuffer.Append(Escape(lines[lineIndex][charIndex]));
-            charIndex++;
-          }
-          coloredTextBuffer.Append(EditorConfig.Ret);
-          lineIndex++;
-          charIndex = 0;
-        }
-        // Reads source code until the start col of the token is met.
+        // Reads source code until the token is met.
+        ReadAndEscape(lines, startLine - 1, coloredTextBuffer, ref lineIndex, ref charIndex);
         while (charIndex < startCol) {
           coloredTextBuffer.Append(Escape(lines[startLine][charIndex]));
           charIndex++;
         }
+        // Reads and colors the token.
         string tokeText = lines[startLine].Substring(startCol, endCol - startCol + 1);
         string escapedTokenText = Escape(tokeText);
         coloredTextBuffer.Append($"<color={color}>{escapedTokenText}</color>");
+
         lineIndex = startLine;
         charIndex = endCol + 1;
       }
-      // Reads the rest of source code that haven't been tokenized.
-      while (lineIndex < lines.Length) {
+      ReadAndEscape(lines, lines.Length - 1, coloredTextBuffer, ref lineIndex, ref charIndex);
+      return coloredTextBuffer.ToString();
+    }
+
+    // Reads code characters starting from (lineIndex, charIndex) to the end of endLine, escapes the
+    // characters and outputs them to outputBuffer. The argument lineIndex and charIndex will be
+    // updated to the next location of the reading point.
+    private static void ReadAndEscape(string[] lines,
+                                      int endLine,
+                                      StringBuilder outputBuffer,
+                                      ref int lineIndex,
+                                      ref int charIndex) {
+      while (lineIndex <= endLine) {
         while (charIndex < lines[lineIndex].Length) {
-          coloredTextBuffer.Append(Escape(lines[lineIndex][charIndex]));
+          outputBuffer.Append(Escape(lines[lineIndex][charIndex]));
           charIndex++;
         }
-        coloredTextBuffer.Append(EditorConfig.Ret);
+        outputBuffer.Append(EditorConfig.Ret);
         lineIndex++;
         charIndex = 0;
       }
-      coloredTextBuffer.Append(EditorConfig.Ret);
-      return coloredTextBuffer.ToString();
     }
 
     // Escapes a character. Returns the character itself if it doesn't need to be escaped.

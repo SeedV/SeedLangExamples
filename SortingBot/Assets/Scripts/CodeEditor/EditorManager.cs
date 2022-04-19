@@ -34,7 +34,7 @@ namespace CodeEditor {
     // text object. The overlay text object shares the same font and style settings with the default
     // text object, and is located on top of the default text object.
     //
-    // We turned off the rich text feature for the InputField itself, while turning on the rich text
+    // We turn off the rich text feature for the InputField itself, while turning on the rich text
     // feature for the overlay text, so that the code editor accepts plain text input and outputs
     // formatted colorful text via the overlay text object.
     private TMP_Text _overlayText;
