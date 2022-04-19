@@ -108,15 +108,15 @@ namespace CodeEditor {
       int lineNo = 1;
       bool isNewLine = true;
       for (int i = 0; i < _inputText.textInfo.lineCount; i++) {
-        var info = _inputText.textInfo.lineInfo[i];
-        string currentLine = inputText.Substring(info.firstCharacterIndex, info.characterCount);
         if (isNewLine) {
           lineNoString.AppendLine($"{lineNo++,4}");
           isNewLine = false;
         } else {
           lineNoString.AppendLine();
         }
-        isNewLine = (currentLine[currentLine.Length - 1] == EditorConfig.Ret);
+        var info = _inputText.textInfo.lineInfo[i];
+        var lineEndingChar = inputText[info.firstCharacterIndex + info.characterCount - 1];
+        isNewLine = (lineEndingChar == EditorConfig.Ret);
       }
       _lineNoText.text = lineNoString.ToString();
     }
