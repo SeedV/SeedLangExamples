@@ -15,7 +15,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using UnityEngine;
 
 namespace CoroutineActions {
@@ -43,8 +42,8 @@ namespace CoroutineActions {
       Debug.Assert(_tasks.Count > 0);
     }
 
-    // Tries to start all the task coroutines in a thread-safe way. Returns true if all the task
-    // coroutines have been started.
+    // Tries to start all the task coroutines. Returns true if all the task coroutines have been
+    // started.
     public bool TryStart() {
       if (!IsRunning) {
         for (int taskId = 0; taskId < _tasks.Count; taskId++) {
@@ -56,7 +55,7 @@ namespace CoroutineActions {
       return true;
     }
 
-    // Stops all the task coroutines in a thread-safe way.
+    // Stops all the task coroutines.
     public void Stop() {
       if (IsRunning) {
         for (int taskId = 0; taskId < _tasks.Count; taskId++) {
