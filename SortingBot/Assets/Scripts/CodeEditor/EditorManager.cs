@@ -47,6 +47,10 @@ namespace CodeEditor {
     // vertical scroll bar is valid.
     private TMP_Text _lineNoText;
 
+    // A flag to disable the onValueChanged handler for the current frame, in order to avoid
+    // re-entry of the handler.
+    private bool disableOnChange = false;
+
     void Start() {
       var textArea = InputField.gameObject.transform.Find("TextArea");
       _inputText = textArea.Find("InputText").GetComponent<TMP_Text>();
@@ -67,10 +71,14 @@ namespace CodeEditor {
       InputField.customCaretColor = true;
       InputField.caretColor = Color.black;
 
-      // The text's onValueChanged handler must run in a coroutine since _inputText.textInfo won't
-      // be updated until the next frame.
       InputField.onValueChanged.AddListener((code) => {
-        StartCoroutine(UpdateEditor(code));
+        if (disableOnChange) {
+          disableOnChange = false;
+        } else {
+          // The code formatting logic must run in a coroutine since _inputText.textInfo won't be
+          // updated until the next frame.
+          StartCoroutine(UpdateEditor(code));
+        }
       });
     }
 
@@ -94,6 +102,7 @@ namespace CodeEditor {
       // onValueChanged events and hang up the application.
       if (enterKey && AutoIndenter.AutoIndent(code, InputField.caretPosition,
                                               out string newCode, out int newCaretPos)) {
+        disableOnChange = true;
         InputField.text = newCode;
         InputField.caretPosition = newCaretPos;
       }
