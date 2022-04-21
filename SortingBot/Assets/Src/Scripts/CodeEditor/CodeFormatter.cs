@@ -18,63 +18,81 @@ using UnityEngine;
 
 namespace CodeEditor {
   public static class CodeFomatter {
-    // Formats source code and returns the formatted colorful code in Unity's rich text format.
-    public static string Format(string code, IReadOnlyList<TokenInfo> tokens) {
-      Debug.Assert(!(code is null) && !(tokens is null));
-      var lines = code.Split(EditorConfig.Ret);
-      int lineIndex = 0;
-      int charIndex = 0;
-      var coloredTextBuffer = new StringBuilder();
-      foreach (var token in tokens) {
-        // Doesn't support multi-line tokens for now.
-        Debug.Assert(token.Range.Start.Line == token.Range.End.Line);
+    // Formats source code based on the following rules:
+    //
+    // 1. Inserts an indention to the caretPos if needed.
+    // 2. If spacesPerTab is not null or empty, use the string to replace all the tab characters in
+    //    the code.
+    // 3. Color the token that are parsed from the code, with Unity's rich text format.
+    //
+    // The output argument formatted is the result of rule 1 and 2.
+    //
+    // The output argument changed will be true if the output formatted string is different from the
+    // input code.
+    //
+    // The output argument newCaretPos contains the new caret pos after inserting the indention.
+    //
+    // The output argument formattedAndColored is the result of rule 1, 2, and 3.
+    //
+    // For performance considerations, we apply all the three rules in only one parsing pass of the
+    // code string.
+    public static void FormatAndColor(string code,
+                                      int caretPos,
+                                      string indention,
+                                      string spacesPerTab,
+                                      IReadOnlyList<TokenInfo> tokens,
+                                      out string formatted,
+                                      out bool changed,
+                                      out int newCaretPos,
+                                      out string formattedAndColored) {
+      Debug.Assert(!(code is null));
 
-        if (!EditorConfig.TokenColors.TryGetValue(token.Type, out string color)) {
-          color = EditorConfig.DefaultTokenColor;
+      int index = 0;
+      int line = 0;
+      int col = 0;
+      var formattedBuffer = new StringBuilder();
+      var formattedAndColoredBuffer = new StringBuilder();
+      changed = false;
+      newCaretPos = caretPos;
+
+      while (index < code.Length) {
+        char c = code[index];
+        if (!(spacesPerTab is null) && c == EditorConfig.Tab) {
+          changed = true;
+          formattedBuffer.Append(spacesPerTab);
+          formattedAndColoredBuffer.Append(spacesPerTab);
+          if (index < caretPos) {
+            newCaretPos += spacesPerTab.Length;
+          }
+          index++;
+          col++;
+        } else if (c == EditorConfig.Ret) {
+          formattedBuffer.Append(c);
+          formattedAndColoredBuffer.Append(c);
+          index++;
+          line++;
+          col = 0;
+        } else {
+          string escaped = Escape(c);
+          formattedBuffer.Append(escaped);
+          formattedAndColoredBuffer.Append(escaped);
+          index++;
+          col++;
         }
-
-        int startLine = token.Range.Start.Line - 1;
-        int startCol = token.Range.Start.Column;
-        int endCol = token.Range.End.Column;
-
-        // Reads source code until the token is met.
-        ReadAndEscape(lines, startLine - 1, coloredTextBuffer, ref lineIndex, ref charIndex);
-        while (charIndex < startCol) {
-          coloredTextBuffer.Append(Escape(lines[startLine][charIndex]));
-          charIndex++;
+        if (index == caretPos) {
+          if (!(indention is null)) {
+            string converted = TabToSpaces(indention, spacesPerTab);
+            formattedBuffer.Append(converted);
+            formattedAndColoredBuffer.Append(converted);
+            newCaretPos += converted.Length;
+            changed = true;
+          }
         }
-        // Reads and colors the token.
-        string tokeText = lines[startLine].Substring(startCol, endCol - startCol + 1);
-        string escapedTokenText = Escape(tokeText);
-        coloredTextBuffer.Append($"<color={color}>{escapedTokenText}</color>");
-
-        lineIndex = startLine;
-        charIndex = endCol + 1;
       }
-      ReadAndEscape(lines, lines.Length - 1, coloredTextBuffer, ref lineIndex, ref charIndex);
-      return coloredTextBuffer.ToString();
+      formatted = formattedBuffer.ToString();
+      formattedAndColored = formattedAndColoredBuffer.ToString();
     }
 
-    // Reads code characters starting from (lineIndex, charIndex) to the end of endLine, escapes the
-    // characters and outputs them to outputBuffer. The argument lineIndex and charIndex will be
-    // updated to the next location of the reading point.
-    private static void ReadAndEscape(string[] lines,
-                                      int endLine,
-                                      StringBuilder outputBuffer,
-                                      ref int lineIndex,
-                                      ref int charIndex) {
-      while (lineIndex <= endLine) {
-        while (charIndex < lines[lineIndex].Length) {
-          outputBuffer.Append(Escape(lines[lineIndex][charIndex]));
-          charIndex++;
-        }
-        outputBuffer.Append(EditorConfig.Ret);
-        lineIndex++;
-        charIndex = 0;
-      }
-    }
-
-    // Escapes a character. Returns the character itself if it doesn't need to be escaped.
     private static string Escape(char c) {
       if (EditorConfig.CharEscapeTable.TryGetValue(c, out string escaped)) {
         return escaped;
@@ -83,11 +101,17 @@ namespace CodeEditor {
       }
     }
 
-    // Escapes a string.
-    private static string Escape(string s) {
+    private static string TabToSpaces(string s, string spacesPerTab) {
+      if (spacesPerTab is null) {
+        return s;
+      }
       StringBuilder buf = new StringBuilder();
       foreach (char c in s) {
-        buf.Append(Escape(c));
+        if (c == EditorConfig.Tab) {
+          buf.Append(spacesPerTab);
+        } else {
+          buf.Append(c);
+        }
       }
       return buf.ToString();
     }

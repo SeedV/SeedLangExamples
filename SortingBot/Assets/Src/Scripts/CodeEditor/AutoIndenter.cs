@@ -13,24 +13,20 @@
 // limitations under the License.
 
 using System.Text;
-using UnityEngine;
 
 namespace CodeEditor {
   public static class AutoIndenter {
     // Given the input code and the current caret pos, calculates if the current input pos needs to
-    // be auto indented.
+    // be auto indented, then returns the indention string of the new line.
     //
-    // Returns true if the current input pos needs auto-indention. Also outputs the indented text
-    // and the new caret pos.
+    // Returns null if the current input pos doesn't need auto-indention.
     //
-    // Return false if the current input pos doesn't need auto-indention. In this case, newCode will
-    // be set to null and newCaretPos will be set to 0.
+    // If the new line has the same indention as the previous line, the returned indention will be a
+    // copy of the previous line's indention.
     //
-    // TODO: Currently we simply use TABs to indent the code. Support TAB-as-spaces later.
-    public static bool AutoIndent(string code, int caretPos,
-                                  out string newCode, out int newCaretPos) {
-      newCode = null;
-      newCaretPos = 0;
+    // If the new line has additional indention levels, the returned string will be appended with
+    // extra tab characters.
+    public static string GetIndention(string code, int caretPos) {
       if (caretPos >= 1 && code[caretPos - 1] == EditorConfig.Ret) {
         int lastLineEndPos = caretPos - 1;
         int lastLineStartPos = lastLineEndPos;
@@ -38,58 +34,60 @@ namespace CodeEditor {
           lastLineStartPos--;
         }
         if (lastLineStartPos < lastLineEndPos) {
-          string lastLine = code.Substring(lastLineStartPos, lastLineEndPos - lastLineStartPos);
-          int lastLineLeadingSpacesEndPos = GetLeadingSpacesEndPos(lastLine);
-          int lastLineLastCharPos = GetLastNonSpaceCharPos(lastLine);
-
-          var autoIndentText = new StringBuilder();
-          autoIndentText.Append(code.Substring(0, caretPos));
-          if (lastLineLeadingSpacesEndPos >= 0) {
-            autoIndentText.Append(
-                code.Substring(lastLineStartPos, lastLineLeadingSpacesEndPos + 1));
+          int lastLineLeadingSpacesEndPos = GetLeadingSpacesEndPos(code,
+                                                                   lastLineStartPos,
+                                                                   lastLineEndPos);
+          var indention = new StringBuilder();
+          if (lastLineLeadingSpacesEndPos >= lastLineStartPos) {
+            indention.Append(code.Substring(lastLineStartPos,
+                                            lastLineLeadingSpacesEndPos - lastLineStartPos + 1));
           }
-          if (lastLineLastCharPos >= 0 &&
-              AutoIncreaseIndent(lastLine[lastLineLastCharPos], out string additionalIndent)) {
-            autoIndentText.Append(additionalIndent);
+          int lastLineLastCharPos = GetLastNonSpaceCharPos(code, lastLineStartPos, lastLineEndPos);
+          if (lastLineLastCharPos >= 0) {
+            string additionalIndent = GetExtraIndention(code[lastLineLastCharPos]);
+            if (!(additionalIndent is null)) {
+              indention.Append(additionalIndent);
+            }
           }
-          newCaretPos = autoIndentText.Length;
-          if (caretPos < code.Length) {
-            autoIndentText.Append(code.Substring(caretPos, code.Length - caretPos));
+          if (indention.Length > 0) {
+            return indention.ToString();
           }
-          newCode = autoIndentText.ToString();
-          return true;
         }
       }
-      return false;
+      return null;
     }
 
-    private static int GetLastNonSpaceCharPos(string line) {
-      int i = line.Length - 1;
-      while (i >= 0 && char.IsWhiteSpace(line[i])) {
+    private static int GetLastNonSpaceCharPos(string code,
+                                              int lastLineStartPos,
+                                              int lastLineEndPos) {
+      int i = lastLineEndPos - 1;
+      while (i >= lastLineStartPos && char.IsWhiteSpace(code[i])) {
         i--;
       }
       return i;
     }
 
-    private static int GetLeadingSpacesEndPos(string line) {
-      int i = 0;
-      while (i < line.Length && char.IsWhiteSpace(line[i])) {
+    private static int GetLeadingSpacesEndPos(string code,
+                                              int lastLineStartPos,
+                                              int lastLineEndPos) {
+      int i = lastLineStartPos;
+      while (i < lastLineEndPos && char.IsWhiteSpace(code[i])) {
         i++;
       }
       return i - 1;
     }
 
-    // Determines if the current line needs to auto-increase the indention level. If so, outputs the
-    // additional spaces as a string via additionalIndent.
+    // Determines if the line needs to auto-increase the indention level. If so, returns a number of
+    // extra tabs as a string. Otherwise, returns null.
     //
     // TODO: support auto-decreasing the indention level too.
-    private static bool AutoIncreaseIndent(char lastLineLastChar, out string additionalIndent) {
+    //
+    // TODO: consider the case that needs to increase more than one indention levels.
+    private static string GetExtraIndention(char lastLineLastChar) {
       if (EditorConfig.EndCharsToIncreaseIndent.Contains(lastLineLastChar)) {
-        additionalIndent = EditorConfig.Tab.ToString();
-        return true;
+        return EditorConfig.Tab.ToString();
       } else {
-        additionalIndent = null;
-        return false;
+        return null;
       }
     }
   }

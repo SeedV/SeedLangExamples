@@ -18,7 +18,24 @@ namespace CodeEditor.Tests {
   public class AutoIndenterTests {
     [Test]
     public void TestAutoIndenter() {
-      Assert.True(true);
+      Assert.IsNull(AutoIndenter.GetIndention("", 0));
+      Assert.IsNull(AutoIndenter.GetIndention("abc", 3));
+      Assert.IsNull(AutoIndenter.GetIndention("\n", 1));
+      Assert.IsNull(AutoIndenter.GetIndention("a\n", 2));
+
+      Assert.AreEqual("\t", AutoIndenter.GetIndention("\t\n", 2));
+      Assert.AreEqual("\t", AutoIndenter.GetIndention("\tabc\n", 5));
+      Assert.AreEqual("  \t", AutoIndenter.GetIndention("  \t\n", 4));
+      Assert.AreEqual("  \t", AutoIndenter.GetIndention("  \tabc\n", 7));
+      Assert.AreEqual("\t\t", AutoIndenter.GetIndention("\n\n\t\ta\n", 6));
+      Assert.AreEqual("  ", AutoIndenter.GetIndention("\n\n  a\n", 6));
+
+      Assert.AreEqual("\t", AutoIndenter.GetIndention(":\n", 2));
+      Assert.AreEqual("\t\t", AutoIndenter.GetIndention("\t:\n", 3));
+      Assert.AreEqual("\t\t", AutoIndenter.GetIndention("\ta:\n", 4));
+      Assert.AreEqual("\t", AutoIndenter.GetIndention("a {\n", 4));
+      Assert.AreEqual("\t", AutoIndenter.GetIndention("a {\nb", 4));
+      Assert.AreEqual("    ", AutoIndenter.GetIndention("    a\n    b\n", 12));
     }
   }
 }
