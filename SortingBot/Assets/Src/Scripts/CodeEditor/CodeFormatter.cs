@@ -21,25 +21,25 @@ namespace CodeEditor {
     // Formats source code based on the following rules:
     //
     // 1. Inserts an indention to the caretPos if needed.
-    // 2. If spacesPerTab is not null or empty, use the string to replace all the tab characters in
-    //    the code.
-    // 3. Color the token that are parsed from the code, with Unity's rich text format.
+    // 2. If tabSize is not 0, use the string to replace all the tab characters in the code.
+    // 3. Color the token that are parsed from the code, with Unity's rich text format, escaping
+    //    special characters if necessary.
     //
-    // The output argument formatted is the result of rule 1 and 2.
+    // The output argument formatted is the result of applying rule 1 and 2.
     //
     // The output argument changed will be true if the output formatted string is different from the
     // input code.
     //
     // The output argument newCaretPos contains the new caret pos after inserting the indention.
     //
-    // The output argument formattedAndColored is the result of rule 1, 2, and 3.
+    // The output argument formattedAndColored is the result of applying rule 1, 2, and 3.
     //
-    // For performance considerations, we apply all the three rules in only one parsing pass of the
-    // code string.
+    // For performance considerations, we apply all the three rules in a single parsing pass of the
+    // code.
     public static void FormatAndColor(string code,
                                       int caretPos,
                                       string indention,
-                                      string spacesPerTab,
+                                      int tabSize,
                                       IReadOnlyList<TokenInfo> tokens,
                                       out string formatted,
                                       out bool changed,
@@ -50,6 +50,7 @@ namespace CodeEditor {
       int index = 0;
       int line = 0;
       int col = 0;
+      int colInFormatted = 0;
       var formattedBuffer = new StringBuilder();
       var formattedAndColoredBuffer = new StringBuilder();
       changed = false;
@@ -57,34 +58,39 @@ namespace CodeEditor {
 
       while (index < code.Length) {
         char c = code[index];
-        if (!(spacesPerTab is null) && c == EditorConfig.Tab) {
+        if (tabSize > 0 && c == EditorConfig.Tab) {
           changed = true;
-          formattedBuffer.Append(spacesPerTab);
-          formattedAndColoredBuffer.Append(spacesPerTab);
+          string spaces = TabToSpaces(colInFormatted, tabSize);
+          formattedBuffer.Append(spaces);
+          formattedAndColoredBuffer.Append(spaces);
           if (index < caretPos) {
-            newCaretPos += spacesPerTab.Length;
+            newCaretPos += spaces.Length - 1;
           }
           index++;
           col++;
+          colInFormatted += spaces.Length;
         } else if (c == EditorConfig.Ret) {
           formattedBuffer.Append(c);
           formattedAndColoredBuffer.Append(c);
           index++;
           line++;
           col = 0;
+          colInFormatted = 0;
         } else {
           string escaped = Escape(c);
-          formattedBuffer.Append(escaped);
+          formattedBuffer.Append(c);
           formattedAndColoredBuffer.Append(escaped);
           index++;
           col++;
+          colInFormatted ++;
         }
         if (index == caretPos) {
           if (!(indention is null)) {
-            string converted = TabToSpaces(indention, spacesPerTab);
+            string converted = TabToSpacesInString(indention, tabSize);
             formattedBuffer.Append(converted);
             formattedAndColoredBuffer.Append(converted);
             newCaretPos += converted.Length;
+            colInFormatted += converted.Length;
             changed = true;
           }
         }
@@ -101,14 +107,27 @@ namespace CodeEditor {
       }
     }
 
-    private static string TabToSpaces(string s, string spacesPerTab) {
-      if (spacesPerTab is null) {
-        return s;
+    // Converts a tab located at col to spaces.
+    private static string TabToSpaces(int col, int tabSize) {
+      Debug.Assert(tabSize > 0);
+      // Aligns the current tab to the next n * tabSize col of the current line.
+      int n = tabSize - col % tabSize;
+      return new string(EditorConfig.Space, n);
+    }
+
+    // Converts all the tabs in a text line to spaces. The string line must not contain Ret
+    // characters.
+    private static string TabToSpacesInString(string line, int tabSize) {
+      if (tabSize <= 0) {
+        return line;
       }
       StringBuilder buf = new StringBuilder();
-      foreach (char c in s) {
+      for (int i = 0; i < line.Length; i++) {
+        char c = line[i];
+        Debug.Assert(c != EditorConfig.Ret);
+        int col = buf.Length;
         if (c == EditorConfig.Tab) {
-          buf.Append(spacesPerTab);
+          buf.Append(TabToSpaces(col, tabSize));
         } else {
           buf.Append(c);
         }

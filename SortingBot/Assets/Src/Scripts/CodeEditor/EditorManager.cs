@@ -99,7 +99,7 @@ namespace CodeEditor {
       CodeFomatter.FormatAndColor(code,
                                   InputField.caretPosition,
                                   indention,
-                                  spacesPerTab,
+                                  TabToSpaces ? TabSize : 0,
                                   tokens,
                                   out string formatted,
                                   out bool changed,
@@ -118,7 +118,6 @@ namespace CodeEditor {
       // Updates the input text and the caret pos in the next frame.
       if (changed) {
         disableOnChangeHandler = true;
-        Debug.Log($"{formatted.Length} {newCaretPos} {formatted}");
         InputField.text = formatted;
         InputField.caretPosition = newCaretPos;
       }

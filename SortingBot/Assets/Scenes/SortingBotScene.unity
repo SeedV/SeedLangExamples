@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.6587083, g: 0.68351775, b: 0.68521404, a: 1}
+  m_IndirectSpecularColor: {r: 0.65870845, g: 0.683518, b: 0.68521434, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -2467,8 +2467,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InputField: {fileID: 512731458}
-  TabToSpaces: 1
-  TabSize: 4
+  TabToSpaces: 0
+  TabSize: 8
 --- !u!1 &525627404
 GameObject:
   m_ObjectHideFlags: 0
