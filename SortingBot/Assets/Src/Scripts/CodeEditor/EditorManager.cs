@@ -25,6 +25,12 @@ namespace CodeEditor {
     // The root UI object of the code editor. It must be a TextMeshPro InputField object.
     public TMP_InputField InputField;
 
+    // Enables or disables the auto-conversion from tab to spaces.
+    public bool TabToSpaces;
+
+    // Number of spaces that a tab is equal to.
+    public int TabSize;
+
     // The default text object of the InputField. Typically a TextMeshPro InputField uses one text
     // object to show the typed text. In Unity we set the color of this default text object to the
     // same color as the editor background, in order to hide the original text.

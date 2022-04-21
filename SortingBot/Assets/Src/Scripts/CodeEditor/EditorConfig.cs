@@ -19,6 +19,10 @@ namespace CodeEditor {
   public static class EditorConfig {
     public const char Ret = '\n';
     public const char Tab = '\t';
+    public const char Space = ' ';
+
+    // Default number of spaces that a tab is equal to.
+    public const int DefaultTabSize = 4;
 
     // The line-ending character that may increase the indention level of the next code line.
     public static readonly HashSet<char> EndCharsToIncreaseIndent = new HashSet<char> {
