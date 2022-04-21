@@ -25,17 +25,14 @@ namespace CodeEditor {
     // 3. Color the token that are parsed from the code, with Unity's rich text format, escaping
     //    special characters if necessary.
     //
-    // The output argument formatted is the result of applying rule 1 and 2.
+    // To achieve a good performance, we apply all above rules in a single parsing pass.
     //
-    // The output argument changed will be true if the output formatted string is different from the
-    // input code.
+    // Output arguments:
     //
-    // The output argument newCaretPos contains the new caret pos after inserting the indention.
-    //
-    // The output argument formattedAndColored is the result of applying rule 1, 2, and 3.
-    //
-    // For performance considerations, we apply all the three rules in a single parsing pass of the
-    // code.
+    // - formatted: The result of applying rule 1 and 2 to the input.
+    // - changed: True if formatted is different from the original code.
+    // - newCaretPos: The new caret pos if formatted is different from the original code.
+    // - formattedAndColored: The result of applying rule 1, 2, and 3 to the input.
     public static void FormatAndColor(string code,
                                       int caretPos,
                                       string indention,
@@ -48,17 +45,22 @@ namespace CodeEditor {
       Debug.Assert(!(code is null));
 
       int index = 0;
-      int line = 0;
+      int line = 1;
       int col = 0;
       int colInFormatted = 0;
-      var formattedBuffer = new StringBuilder();
-      var formattedAndColoredBuffer = new StringBuilder();
+      int tokenIndex = 0;
+
       changed = false;
       newCaretPos = caretPos;
 
+      var formattedBuffer = new StringBuilder();
+      var formattedAndColoredBuffer = new StringBuilder();
+
+      // Applies all the conversion/formatting rules in a single parsing pass.
       while (index < code.Length) {
         char c = code[index];
         if (tabSize > 0 && c == EditorConfig.Tab) {
+          // Converts tab to spaces if needed.
           changed = true;
           string spaces = TabToSpaces(colInFormatted, tabSize);
           formattedBuffer.Append(spaces);
@@ -70,28 +72,60 @@ namespace CodeEditor {
           col++;
           colInFormatted += spaces.Length;
         } else if (c == EditorConfig.Ret) {
+          // Starts a new line.
           formattedBuffer.Append(c);
           formattedAndColoredBuffer.Append(c);
           index++;
           line++;
           col = 0;
           colInFormatted = 0;
+        } else if (tokenIndex < tokens.Count &&
+                   line == tokens[tokenIndex].Range.Start.Line &&
+                   col == tokens[tokenIndex].Range.Start.Column) {
+          // The next token is met. Outputs the original token to formatted, and outputs colored
+          // token to formattedAndColored.
+
+          // Doesn't support multi-line tokens for now.
+          Debug.Assert(tokens[tokenIndex].Range.Start.Line == tokens[tokenIndex].Range.End.Line);
+
+          string tokenColor = EditorConfig.DefaultTokenColor;
+          if (EditorConfig.TokenColors.TryGetValue(tokens[tokenIndex].Type, out string color)) {
+            tokenColor = color;
+          }
+          formattedAndColoredBuffer.Append($"<{tokenColor}>");
+          for (int i = tokens[tokenIndex].Range.Start.Column;
+               i <= tokens[tokenIndex].Range.End.Column;
+               i++) {
+            c = code[index];
+            formattedBuffer.Append(c);
+            formattedAndColoredBuffer.Append(c);
+            index++;
+            col++;
+            colInFormatted++;
+          }
+          formattedAndColoredBuffer.Append($"</color>");
+          tokenIndex++;
         } else {
-          string escaped = Escape(c);
+          // For a non-token character, copies it to both formatted and formattedAndColored.
+          // formattedAndColored requires that special characters such as "<" and ">" must be
+          // escaped.
           formattedBuffer.Append(c);
+          string escaped = Escape(c);
           formattedAndColoredBuffer.Append(escaped);
           index++;
           col++;
-          colInFormatted ++;
+          colInFormatted++;
         }
         if (index == caretPos) {
+          // If the current caret pos is met and an auto-indention string is required, copies the
+          // indention string to both formatted and formattedAndColored.
           if (!(indention is null)) {
+            changed = true;
             string converted = TabToSpacesInString(indention, tabSize);
             formattedBuffer.Append(converted);
             formattedAndColoredBuffer.Append(converted);
             newCaretPos += converted.Length;
             colInFormatted += converted.Length;
-            changed = true;
           }
         }
       }
