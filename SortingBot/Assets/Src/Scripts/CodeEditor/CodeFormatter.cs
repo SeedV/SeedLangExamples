@@ -24,7 +24,7 @@ namespace CodeEditor {
     //
     // 1. Inserts an indention to the caretPos if needed.
     // 2. If tabSize is not 0, uses the string to replace all the tab characters in the code.
-    // 3. Color the token that are parsed from the code, with Unity's rich text format, escaping
+    // 3. Colors the token that are parsed from the code, with Unity's rich text format, escaping
     //    special characters if necessary.
     //
     // To achieve a good performance, we apply all above rules in a single parsing pass.
