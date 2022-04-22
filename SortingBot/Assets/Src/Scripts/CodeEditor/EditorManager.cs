@@ -19,6 +19,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+using SeedLang;
+
 namespace CodeEditor {
   // The main controller of the code editor.
   public class EditorManager : MonoBehaviour {
@@ -27,6 +29,9 @@ namespace CodeEditor {
 
     // Enables or disables the auto-conversion from tab to spaces.
     public bool TabToSpaces = true;
+
+    // SeedLang engine instance.
+    private readonly Engine engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
 
     // Number of spaces that a tab is equal to.
     public int TabSize = EditorConfig.DefaultTabSize;
@@ -89,9 +94,7 @@ namespace CodeEditor {
     }
 
     private IEnumerator UpdateEditor(string code) {
-      // TODO: replace the following line with SeedLang's API once the SeedLang plugin is ready.
-      MockSyntaxParser.ParseSyntaxTokens(code, out IReadOnlyList<TokenInfo> tokens);
-
+      var tokens = engine.ParseSyntaxTokens(code, "");
       bool enterKey = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
       int caretPos = InputField.caretPosition;
       string indention = enterKey ? AutoIndenter.GetIndention(code, caretPos) : null;

@@ -14,6 +14,8 @@
 
 using System.Collections.Generic;
 
+using SeedLang.Common;
+
 namespace CodeEditor {
   // Common config info of the code editor.
   public static class EditorConfig {
@@ -39,11 +41,45 @@ namespace CodeEditor {
     // Unity rich text colors use CSS-like notations.
     public const string DefaultTokenColor = "#666";
 
-    // TODO: Complete the color list once the real SeedLang plugin is ready.
+    // See https://github.com/SeedV/SeedLang/blob/main/csharp/src/SeedLang/Common/TokenInfo.cs for a
+    // complete list of token types.
+    //
+    // TODO: support multiple color themes.
     public static readonly Dictionary<TokenType, string> TokenColors =
         new Dictionary<TokenType, string>() {
-          [TokenType.Label] = "#09F",
-          [TokenType.Number] = "#0C6",
+          [TokenType.Class] = "#09c",
+          [TokenType.Comment] = "#ccc",
+          [TokenType.Decorator] = "#c93",
+          [TokenType.Enum] = "#09c",
+          [TokenType.EnumMember] = "#09c",
+          [TokenType.Event] = "#09c",
+          [TokenType.Function] = "#09c",
+          [TokenType.Interface] = "#09c",
+          [TokenType.Keyword] = "#009",
+          [TokenType.Label] = "#333",
+          [TokenType.Macro] = "#333",
+          [TokenType.Method] = "#09c",
+          [TokenType.Namespace] = "#09c",
+          [TokenType.Number] = "#093",
+          [TokenType.Operator] = "#666",
+          [TokenType.Parameter] = "#09c",
+          [TokenType.Property] = "#09c",
+          [TokenType.Regexp] = "#960",
+          [TokenType.String] = "#960",
+          [TokenType.Struct] = "#09c",
+          [TokenType.Type] = "#09c",
+          [TokenType.TypeParameter] = "#09c",
+          [TokenType.Variable] = "#900",
+          [TokenType.Boolean] = "#f9f",
+          [TokenType.CloseBrace] = "#000",
+          [TokenType.CloseBracket] = "#000",
+          [TokenType.CloseParenthesis] = "#000",
+          [TokenType.Nil] = "#f9f",
+          [TokenType.OpenBrace] = "#000",
+          [TokenType.OpenBracket] = "#000",
+          [TokenType.OpenParenthesis] = "#000",
+          [TokenType.Symbol] = "#000",
+          [TokenType.Unknown] = "#666",
         };
   }
 }

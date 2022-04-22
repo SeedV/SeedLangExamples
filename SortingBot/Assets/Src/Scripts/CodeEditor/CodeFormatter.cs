@@ -16,6 +16,8 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
+using SeedLang.Common;
+
 namespace CodeEditor {
   public static class CodeFomatter {
     // Formats source code based on the following rules:

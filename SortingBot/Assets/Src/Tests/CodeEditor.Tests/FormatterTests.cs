@@ -15,6 +15,8 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 
+using SeedLang.Common;
+
 namespace CodeEditor.Tests {
   public class FormatterTests {
     [Test]
