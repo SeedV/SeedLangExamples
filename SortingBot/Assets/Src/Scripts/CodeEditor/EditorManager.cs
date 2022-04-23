@@ -19,11 +19,22 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+using SeedLang;
+
 namespace CodeEditor {
   // The main controller of the code editor.
   public class EditorManager : MonoBehaviour {
     // The root UI object of the code editor. It must be a TextMeshPro InputField object.
     public TMP_InputField InputField;
+
+    // Enables or disables the auto-conversion from tab to spaces.
+    public bool TabToSpaces = true;
+
+    // SeedLang engine instance.
+    private readonly Engine engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
+
+    // Number of spaces that a tab is equal to.
+    public int TabSize = EditorConfig.DefaultTabSize;
 
     // The default text object of the InputField. Typically a TextMeshPro InputField uses one text
     // object to show the typed text. In Unity we set the color of this default text object to the
@@ -47,6 +58,10 @@ namespace CodeEditor {
     // vertical scroll bar is valid.
     private TMP_Text _lineNoText;
 
+    // A flag to disable the onValueChanged handler for the current frame, in order to avoid
+    // re-entry of the handler.
+    private bool disableOnChangeHandler = false;
+
     void Start() {
       var textArea = InputField.gameObject.transform.Find("TextArea");
       _inputText = textArea.Find("InputText").GetComponent<TMP_Text>();
@@ -67,34 +82,46 @@ namespace CodeEditor {
       InputField.customCaretColor = true;
       InputField.caretColor = Color.black;
 
-      // The text's onValueChanged handler must run in a coroutine since _inputText.textInfo won't
-      // be updated until the next frame.
       InputField.onValueChanged.AddListener((code) => {
-        StartCoroutine(UpdateEditor(code));
+        if (disableOnChangeHandler) {
+          disableOnChangeHandler = false;
+        } else {
+          // The editor updating logic must run in a coroutine since _inputText.textInfo won't be
+          // updated until the next frame.
+          StartCoroutine(UpdateEditor(code));
+        }
       });
     }
 
     private IEnumerator UpdateEditor(string code) {
-      // TODO: replace the following line with SeedLang's API once the SeedLang plugin is ready.
-      MockSyntaxParser.ParseSyntaxTokens(code, out IReadOnlyList<TokenInfo> tokens);
-
-      // Gets the formatted colorful text.
-      _overlayText.text = CodeFomatter.Format(code, tokens);
-
-      // Checks the enter key state and uses the state in the next frame for auto-indention.
+      var tokens = engine.ParseSyntaxTokens(code, "");
       bool enterKey = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
+      int caretPos = InputField.caretPosition;
+      string indention = enterKey ? AutoIndenter.GetIndention(code, caretPos) : null;
+      string spacesPerTab = TabToSpaces ? new string(EditorConfig.Space, TabSize) : null;
+      CodeFomatter.FormatAndColor(code,
+                                  InputField.caretPosition,
+                                  indention,
+                                  TabToSpaces ? TabSize : 0,
+                                  tokens,
+                                  out string formatted,
+                                  out bool changed,
+                                  out int newCaretPos,
+                                  out string formattedAndColored);
 
-      // Waits for the next frame to calculate and update the line no list, since
-      // InputText.textInfo.lineInfo won't be updated until the next frame.
+      _overlayText.text = formattedAndColored;
+
+      // Waits for the next frame.
       yield return null;
+
+      // Calculates and updates the line no list in the next frame, since
+      // InputText.textInfo.lineInfo won't be updated until the next frame.
       UpdateLineNoText();
 
-      // AutoIndent() might change the content and the caret position of the input field. It must be
-      // invoked in the next frame, otherwise, the content change will generate recursive
-      // onValueChanged events and hang up the application.
-      if (enterKey && AutoIndenter.AutoIndent(code, InputField.caretPosition,
-                                              out string newCode, out int newCaretPos)) {
-        InputField.text = newCode;
+      // Updates the input text and the caret pos in the next frame.
+      if (changed) {
+        disableOnChangeHandler = true;
+        InputField.text = formatted;
         InputField.caretPosition = newCaretPos;
       }
     }

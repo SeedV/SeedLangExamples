@@ -2467,6 +2467,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InputField: {fileID: 512731458}
+  TabToSpaces: 1
+  TabSize: 4
 --- !u!1 &525627404
 GameObject:
   m_ObjectHideFlags: 0
