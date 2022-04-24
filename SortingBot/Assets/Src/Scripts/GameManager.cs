@@ -15,6 +15,7 @@
 using System.Threading;
 using UnityEngine;
 
+using CodeEditor;
 using CoroutineActions;
 
 public class GameManager : MonoBehaviour {
@@ -23,9 +24,11 @@ public class GameManager : MonoBehaviour {
 
   public Stacks3D Stacks3D;
   public Stacks2D Stacks2D;
+  public EditorManager CodeEditor;
 
   // Event handler when user runs the program.
   public void OnRun() {
+    CodeEditor.HighlightLine(1);
     RunDemo();
   }
 
