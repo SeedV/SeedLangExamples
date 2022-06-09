@@ -27,18 +27,24 @@ public static class Config {
   // name, while the URP pipeline uses "_BaseColor" as the main color name.
   public const string MainColorName = "_BaseColor";
 
+  // Common animation settings shared by 3D and 2D stacks.
+  public const float StackCubeAlpha = 0.7f;
+  public const float StackCubeSetupInterval = .05f;
+  public const float StackCubeFlashInterval = .2f;
+  public const float StackCubeFlashTimes = 3;
+
   // Color definition for every stack state.
   private static readonly Dictionary<StackState, Color> _stackColors =
       new Dictionary<StackState, Color>() {
     [StackState.Normal] = new Color32(0x00, 0x99, 0xff, 0xff),
-    [StackState.Highlighted] = new Color32(0xff, 0x99, 0x00, 0xff),
-    [StackState.BeingCompared] = new Color32(0xff, 0xff, 0x00, 0xff),
-    [StackState.BeingSwapped] = new Color32(0x00, 0xcc, 0x33, 0xff),
-    [StackState.Sorted] = new Color32(0x00, 0xff, 0x33, 0xff),
+    [StackState.Highlighted] = new Color32(0xff, 0xff, 0xff, 0xff),
+    [StackState.BeingCompared] = new Color32(0x99, 0x99, 0xff, 0xff),
+    [StackState.BeingSwapped] = new Color32(0x66, 0xff, 0x33, 0xff),
+    [StackState.Sorted] = new Color32(0x33, 0xff, 0x33, 0xff),
   };
 
-  public static Color GetStackColor(StackState state, float alpha = 1.0f) {
+  public static Color GetStackColor(StackState state) {
     var color = _stackColors[state];
-    return new Color(color.r, color.g, color.b, alpha);
+    return new Color(color.r, color.g, color.b, StackCubeAlpha);
   }
 }

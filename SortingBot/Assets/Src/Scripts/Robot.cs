@@ -12,10 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using UnityEngine;
 
 public class Robot : MonoBehaviour {
+  private const float _epsilon = 0.01f;
+  private const float _transitionTime = .25f;
   private Vector3 _originPos;
+
+  public IEnumerator Goto(Vector3 targetPos) {
+    // Ignores the y value that is passed in.
+    targetPos.y = _originPos.y;
+    var currentPos = transform.localPosition;
+    var speed = Vector3.zero;
+    while (Vector3.Distance(transform.localPosition, targetPos) > _epsilon) {
+      transform.localPosition =
+          Vector3.SmoothDamp(transform.localPosition, targetPos, ref speed, _transitionTime);
+      yield return null;
+    }
+    transform.localPosition = targetPos;
+    yield return null;
+  }
+
+  public IEnumerator GoHome() {
+    yield return Goto(_originPos);
+  }
 
   void Start() {
     _originPos = transform.localPosition;

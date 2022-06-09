@@ -40,14 +40,14 @@ namespace CodeEditor {
       public List<TMP_LineInfo> InfoOfEditorLines => _infoOfEditorLines;
     }
 
+    // SeedLang engine instance.
+    private readonly Engine engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
+
     // The root UI object of the code editor. It must be a TextMeshPro InputField object.
     public TMP_InputField InputField;
 
     // Enables or disables the auto-conversion from tab to spaces.
     public bool TabToSpaces = true;
-
-    // SeedLang engine instance.
-    private readonly Engine engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
 
     // Number of spaces that a tab is equal to.
     public int TabSize = EditorConfig.DefaultTabSize;
