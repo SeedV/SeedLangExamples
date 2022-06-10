@@ -19,14 +19,21 @@ using UnityEngine;
 using SeedLang.Common;
 
 public class Inspector : MonoBehaviour {
-  private TMP_Text _textConsole;
+  public TMP_Text TextConsole;
+
+  public void Clear() {
+    TextConsole.text = "";
+  }
 
   public void OutputTextInfo(string info) {
-    _textConsole.text = info;
+    TextConsole.text = info;
   }
 
   public void AppendTextInfo(string info) {
-    _textConsole.text = $"{_textConsole.text}\n{info}";
+    if (TextConsole.text.Length > 0) {
+      TextConsole.text += "\n";
+    }
+    TextConsole.text += info;
   }
 
   public void OutputSeedLangDiagnostics(DiagnosticCollection collection) {
@@ -35,12 +42,6 @@ public class Inspector : MonoBehaviour {
 
   public void AppendSeedLangDiagnostics(DiagnosticCollection collection) {
     AppendTextInfo(FormatDiagnosticCollection(collection));
-  }
-
-  void Start() {
-    var obj = transform.Find("InspectorOutput")?.Find("TextConsole").gameObject;
-    Debug.Assert(!(obj is null));
-    _textConsole = obj.GetComponent<TMP_Text>();
   }
 
   private string FormatDiagnosticCollection(DiagnosticCollection collection) {
