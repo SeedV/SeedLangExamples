@@ -30,49 +30,57 @@ public class CodeExecutor
   private const int _minSleepInMilliSeconds = 30;
   private const float _singleStepWaitInSeconds = .5f;
 
-  private static Mutex _mutex = new Mutex();
-  private readonly GameManager _gameManager;
-  private Thread _thread;
-
-  private string _source;
-  private Dictionary<string, VTagInfo> _currentVTags = new Dictionary<string, VTagInfo>();
-
   // Uses lower-case VTag names to support case-insensitive comparisons.
-  private string _dataVTag = "data";
-  private string _compareVTag = "compare";
-  private string _swapVTag = "swap";
+  private const string _dataVTag = "data";
+  private const string _compareVTag = "compare";
+  private const string _swapVTag = "swap";
+
+  private readonly GameManager _gameManager;
+  private readonly Dictionary<string, VTagInfo> _currentVTags = new Dictionary<string, VTagInfo>();
+  private readonly object _threadLock = new object();
 
   // If the executor thread is running.
   public bool IsRunning => !(_thread is null);
 
   // A switch for the caller to stop the code execution when the thread is running. It's safe for
-  // another thread to flip this bool flag.
+  // another thread to flip this bool flag directly.
   public bool Stopping = false;
+
+  private Thread _thread;
+  private string _source;
 
   public CodeExecutor(GameManager gameManager) {
     _gameManager = gameManager;
   }
 
+  // Runs a SeedLang script. Returns false if the executor is already running.
   public bool Run(string source) {
     bool ret = true;
-    _mutex.WaitOne();
-    if (_thread is null) {
-      _source = source;
-      _thread = new Thread(ThreadEntry);
-      _thread.Start();
-    } else {
-      ret = false;
+    lock (_threadLock) {
+      if (_thread is null) {
+        _source = source;
+        _thread = new Thread(ThreadEntry);
+        _thread.Start();
+      } else {
+        ret = false;
+      }
     }
-    _mutex.ReleaseMutex();
     return ret;
   }
 
   public void On(Event.SingleStep e, IVM vm) {
+    // Only checks the stopping flag in the SingleStep callback.
     if (Stopping) {
       vm.Stop();
       Stopping = false;
     }
+
+    // Highlights the current line.
     _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
+
+    // A temporary solution to check the compare VTag.
+    //
+    // TODO: Migrate to the Compare event when the event supports getting semantic variable info.
     if (_currentVTags.TryGetValue(_compareVTag, out VTagInfo tag)) {
       if (tag.Values[0].IsNumber && tag.Values[1].IsNumber) {
         int index1 = (int)(tag.Values[0].AsNumber());
@@ -86,7 +94,9 @@ public class CodeExecutor
 
   public void On(Event.Assignment e, IVM vm) {
     if (_currentVTags.ContainsKey(_dataVTag) && e.Value.IsList) {
+      // Inside the data VTag, checks if the data list meets the requirements.
       if (e.Value.Length > Config.StackCount) {
+        // TODO: makes all string messages localizable.
         _gameManager.QueueOutputTextInfo(
             $"The length of {e.Name} exceeds the limit 0-{Config.StackCount}.");
         vm.Stop();
@@ -120,6 +130,7 @@ public class CodeExecutor
 
   public void On(Event.VTagExited e, IVM vm) {
     foreach (var tag in e.VTags) {
+      // Handles the swap operation in the Exited event of the VTag.
       string name = tag.Name.ToLower();
       _currentVTags.Remove(name);
       if (name == _swapVTag && tag.Values[0].IsNumber && tag.Values[1].IsNumber) {
@@ -131,12 +142,18 @@ public class CodeExecutor
     }
   }
 
+  // This method is used to synchronize the executor thread and the main UI thread. For example, it
+  // will be confusing if the main UI thread is still playing the swapping animation while the
+  // executor thread has finished the program.
+  //
+  // TODO: design and implement a better synchronizing solution between the UI and the executor.
   private void WaitForActionQueueComplete() {
     while (!_gameManager.IsActionQueueEmpty) {
       Thread.Sleep(_minSleepInMilliSeconds);
     }
   }
 
+  // The main thread of the executor.
   private void ThreadEntry() {
     _gameManager.QueueOutputTextInfo("");
     var engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
