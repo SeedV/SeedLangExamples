@@ -60,7 +60,7 @@ public class CodeExecutor
     return ret;
   }
 
-  public void On(Event.SingleStep e) {
+  public void On(Event.SingleStep e, IVM vm) {
     _gameManager.QueueHighlightCodeLine(e.Range.Start.Line);
     if (_currentVTags.TryGetValue(_compareVTag, out VTagInfo tag)) {
       if (tag.Values[0].IsNumber && tag.Values[1].IsNumber) {
@@ -73,7 +73,7 @@ public class CodeExecutor
     Thread.Sleep(_singleStepWaitInMilliSeconds);
   }
 
-  public void On(Event.Assignment e) {
+  public void On(Event.Assignment e, IVM vm) {
     if (_currentVTags.ContainsKey(_dataVTag) && e.Value.IsList) {
       _gameManager.QueueOutputTextInfo($"Data to sort: {e.Name} = {e.Value}");
       var intValueList = new List<int>();
@@ -92,14 +92,14 @@ public class CodeExecutor
     }
   }
 
-  public void On(Event.VTagEntered e) {
+  public void On(Event.VTagEntered e, IVM vm) {
     foreach (var tag in e.VTags) {
       string name = tag.Name.ToLower();
       _currentVTags.Add(name, tag);
     }
   }
 
-  public void On(Event.VTagExited e) {
+  public void On(Event.VTagExited e, IVM vm) {
     foreach (var tag in e.VTags) {
       string name = tag.Name.ToLower();
       _currentVTags.Remove(name);

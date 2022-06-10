@@ -41,7 +41,7 @@ namespace CodeEditor {
     }
 
     // SeedLang engine instance.
-    private readonly Engine engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
+    private readonly Engine _engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
 
     // The root UI object of the code editor. It must be a TextMeshPro InputField object.
     public TMP_InputField InputField;
@@ -127,7 +127,7 @@ namespace CodeEditor {
     }
 
     private IEnumerator UpdateEditor(string code) {
-      var tokens = engine.ParseSyntaxTokens(code, "");
+      var tokens = _engine.ParseSyntaxTokens(code, "");
       bool enterKey = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
       int caretPos = InputField.caretPosition;
       string indention = enterKey ? AutoIndenter.GetIndention(code, caretPos) : null;
