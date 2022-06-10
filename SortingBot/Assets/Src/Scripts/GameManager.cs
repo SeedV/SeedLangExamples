@@ -72,8 +72,8 @@ public class GameManager : MonoBehaviour {
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
-  public void QueueHighlightCodeLine(int lineNo) {
-    var task = new Task1<int>(HighlightCodeLineTask, lineNo);
+  public void QueueHighlightCodeLineAndWait(int lineNo, float secondsToWait) {
+    var task = new Task2<int, float>(HighlightCodeLineTask, lineNo, secondsToWait);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
@@ -156,8 +156,8 @@ public class GameManager : MonoBehaviour {
     yield return null;
   }
 
-  private IEnumerator HighlightCodeLineTask(int lineNo) {
+  private IEnumerator HighlightCodeLineTask(int lineNo, float secondsToWait) {
     CodeEditor.HighlightLine(lineNo);
-    yield return null;
+    yield return new WaitForSeconds(secondsToWait);
   }
 }

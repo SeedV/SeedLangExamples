@@ -28,7 +28,7 @@ public class CodeExecutor
       IVisualizer<Event.VTagExited> {
   private const string _defaultModuleName = "Program";
   private const int _minSleepInMilliSeconds = 30;
-  private const int _singleStepWaitInMilliSeconds = 1000;
+  private const float _singleStepWaitInSeconds = .5f;
 
   private static Mutex _mutex = new Mutex();
   private readonly GameManager _gameManager;
@@ -61,7 +61,7 @@ public class CodeExecutor
   }
 
   public void On(Event.SingleStep e, IVM vm) {
-    _gameManager.QueueHighlightCodeLine(e.Range.Start.Line);
+    _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
     if (_currentVTags.TryGetValue(_compareVTag, out VTagInfo tag)) {
       if (tag.Values[0].IsNumber && tag.Values[1].IsNumber) {
         int index1 = (int)(tag.Values[0].AsNumber());
@@ -70,7 +70,7 @@ public class CodeExecutor
         _currentVTags.Remove(_compareVTag);
       }
     }
-    Thread.Sleep(_singleStepWaitInMilliSeconds);
+    WaitForActionQueueComplete();
   }
 
   public void On(Event.Assignment e, IVM vm) {
@@ -84,9 +84,7 @@ public class CodeExecutor
         intValueList.Add(intValue);
       }
       _gameManager.QueueSetupStacks(intValueList);
-      while (!_gameManager.IsActionQueueEmpty) {
-        Thread.Sleep(_minSleepInMilliSeconds);
-      }
+      WaitForActionQueueComplete();
     } else {
       _gameManager.QueueOutputTextInfo($"Assigning: {e.Name} = {e.Value}");
     }
@@ -107,7 +105,14 @@ public class CodeExecutor
         int index1 = (int)(tag.Values[0].AsNumber());
         int index2 = (int)(tag.Values[1].AsNumber());
         _gameManager.QueueSwap(index1, index2);
+        WaitForActionQueueComplete();
       }
+    }
+  }
+
+  private void WaitForActionQueueComplete() {
+    while (!_gameManager.IsActionQueueEmpty) {
+      Thread.Sleep(_minSleepInMilliSeconds);
     }
   }
 
@@ -121,7 +126,7 @@ public class CodeExecutor
     } else if (!engine.Run(collection)) {
       _gameManager.QueueOutputSeedLangDiagnostics(collection);
     } else {
-      _gameManager.QueueHighlightCodeLine(-1);
+      _gameManager.QueueHighlightCodeLineAndWait(-1, 0);
       _gameManager.QueueOutputTextInfo("Done.");
     }
     _thread = null;
