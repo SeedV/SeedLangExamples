@@ -81,7 +81,7 @@ public class GameManager : MonoBehaviour {
     int count = Mathf.Min(Config.StackCount, data.Count);
     for (int i = 0; i < Config.StackCount; i++) {
       int num = i < data.Count ? data[i] : 0;
-      if (num > 0) {
+      if (Stacks3D.GetStackCubeNum(i) > 0 || num > 0) {
         QueueRobotGotoStack(i);
         var task3D = new Task2<int, int>(Stacks3D.Setup, i, num);
         var task2D = new Task2<int, int>(Stacks2D.Setup, i, num);

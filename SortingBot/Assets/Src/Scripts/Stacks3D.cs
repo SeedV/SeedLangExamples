@@ -30,7 +30,13 @@ public class Stacks3D : MonoBehaviour {
   private GameObject _cubeRef;
   private float _cubeInitialY;
 
-  // Returns the world position of a stack's base postion.
+  // Gets the current cube number of a stack.
+  public int GetStackCubeNum(int stackIndex) {
+    Debug.Assert(stackIndex >= 0 && stackIndex < Config.StackCount);
+    return _stackCubes[stackIndex].Count;
+  }
+
+  // Returns the world position of a stack's base position.
   public Vector3 GetStackBasePos(int stackIndex) {
     Debug.Assert(stackIndex >= 0 && stackIndex < Config.StackCount);
     return _stackBasePositions[stackIndex];
