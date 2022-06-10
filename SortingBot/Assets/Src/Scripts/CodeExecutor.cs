@@ -42,6 +42,13 @@ public class CodeExecutor
   private string _compareVTag = "compare";
   private string _swapVTag = "swap";
 
+  // If the executor thread is running.
+  public bool IsRunning => !(_thread is null);
+
+  // A switch for the caller to stop the code execution when the thread is running. It's safe for
+  // another thread to flip this bool flag.
+  public bool Stopping = false;
+
   public CodeExecutor(GameManager gameManager) {
     _gameManager = gameManager;
   }
@@ -61,6 +68,10 @@ public class CodeExecutor
   }
 
   public void On(Event.SingleStep e, IVM vm) {
+    if (Stopping) {
+      vm.Stop();
+      Stopping = false;
+    }
     _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
     if (_currentVTags.TryGetValue(_compareVTag, out VTagInfo tag)) {
       if (tag.Values[0].IsNumber && tag.Values[1].IsNumber) {
@@ -75,14 +86,24 @@ public class CodeExecutor
 
   public void On(Event.Assignment e, IVM vm) {
     if (_currentVTags.ContainsKey(_dataVTag) && e.Value.IsList) {
-      _gameManager.QueueOutputTextInfo($"Data to sort: {e.Name} = {e.Value}");
+      if (e.Value.Length > Config.StackCount) {
+        _gameManager.QueueOutputTextInfo(
+            $"The length of {e.Name} exceeds the limit 0-{Config.StackCount}.");
+        vm.Stop();
+        return;
+      }
       var intValueList = new List<int>();
       for (int i = 0; i < e.Value.Length; i++) {
-        // TODO: Checks if the length of the array and the value of each item exceed the limit. If
-        // so, reports the issue and stops the program.
         int intValue = (int)(e.Value[new Value(i)].AsNumber());
+        if (intValue < 0 || intValue > Config.MaxCubesPerStack) {
+          _gameManager.QueueOutputTextInfo(
+              $"The value {e.Name}[{i}] exceeds the limit 0-{Config.MaxCubesPerStack}.");
+          vm.Stop();
+          return;
+        }
         intValueList.Add(intValue);
       }
+      _gameManager.QueueOutputTextInfo($"Data to sort: {e.Name} = {e.Value}");
       _gameManager.QueueSetupStacks(intValueList);
       WaitForActionQueueComplete();
     } else {

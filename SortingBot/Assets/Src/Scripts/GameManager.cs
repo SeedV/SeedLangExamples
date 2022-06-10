@@ -43,13 +43,13 @@ public class GameManager : MonoBehaviour {
   // Event handler when user runs the program.
   public void OnRun() {
     // TODO: disable the "Run" button when a program is running.
+    Inspector.Clear();
     _codeExecutor.Run(CodeEditor.InputField.text);
   }
 
   // Event handler when user stops the running of the program.
   public void OnStop() {
-    // TODO: stops running the program and also stops the action queue, once SeedLang.Engine
-    // supports the Stop() interface.
+    _codeExecutor.Stopping = true;
   }
 
   // Event handler when user loads an example code.
@@ -63,12 +63,13 @@ public class GameManager : MonoBehaviour {
   }
 
   public void QueueOutputTextInfo(string info) {
-    var task = new Task1<string>(OutputTextInfoTask, info);
+    var task = new Task2<string, bool>(OutputTextInfoTask, info, true);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
   public void QueueOutputSeedLangDiagnostics(DiagnosticCollection collection) {
-    var task = new Task1<DiagnosticCollection>(OutputSeedLangDiagnosticsTask, collection);
+    var task =
+        new Task2<DiagnosticCollection, bool>(OutputSeedLangDiagnosticsTask, collection, true);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
@@ -146,13 +147,21 @@ public class GameManager : MonoBehaviour {
     ExamplesDropdown.AddOptions(options);
   }
 
-  private IEnumerator OutputTextInfoTask(string info) {
-    Inspector.OutputTextInfo(info);
+  private IEnumerator OutputTextInfoTask(string info, bool append) {
+    if (append) {
+      Inspector.AppendTextInfo(info);
+    } else {
+      Inspector.OutputTextInfo(info);
+    }
     yield return null;
   }
 
-  private IEnumerator OutputSeedLangDiagnosticsTask(DiagnosticCollection collection) {
-    Inspector.OutputSeedLangDiagnostics(collection);
+  private IEnumerator OutputSeedLangDiagnosticsTask(DiagnosticCollection collection, bool append) {
+    if (append) {
+      Inspector.AppendSeedLangDiagnostics(collection);
+    } else {
+      Inspector.OutputSeedLangDiagnostics(collection);
+    }
     yield return null;
   }
 
