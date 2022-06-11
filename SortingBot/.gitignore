@@ -57,3 +57,9 @@ sysinfo.txt
 
 # Crashlytics generated file
 crashlytics-build.properties
+
+// Unity user settings
+/[Uu]ser[Ss]ettings/
+
+# Blender backups
+*.blend1
