@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading;
 
 using SeedLang;
@@ -26,6 +28,28 @@ public class CodeExecutor
       IVisualizer<Event.Assignment>,
       IVisualizer<Event.VTagEntered>,
       IVisualizer<Event.VTagExited> {
+  private class ConsoleWriter : TextWriter {
+    private readonly GameManager _gameManager;
+    private readonly StringBuilder _buffer = new StringBuilder();
+
+    public override System.Text.Encoding Encoding => Encoding.Default;
+
+    public ConsoleWriter(GameManager gameManager) {
+      _gameManager = gameManager;
+    }
+
+    public override void Write(char c) {
+      if (c == '\n') {
+        if (_buffer.Length > 0) {
+          _gameManager.QueueOutputTextInfo(_buffer.ToString());
+          _buffer.Clear();
+        }
+      } else {
+        _buffer.Append(c);
+      }
+    }
+  }
+
   private const string _defaultModuleName = "Program";
   private const int _minSleepInMilliSeconds = 30;
   private const float _singleStepWaitInSeconds = .5f;
@@ -36,6 +60,7 @@ public class CodeExecutor
   private const string _swapVTag = "swap";
 
   private readonly GameManager _gameManager;
+  private readonly ConsoleWriter _consoleWriter;
   private readonly Dictionary<string, VTagInfo> _currentVTags = new Dictionary<string, VTagInfo>();
   private readonly object _threadLock = new object();
 
@@ -51,6 +76,7 @@ public class CodeExecutor
 
   public CodeExecutor(GameManager gameManager) {
     _gameManager = gameManager;
+    _consoleWriter = new ConsoleWriter(gameManager);
   }
 
   // Runs a SeedLang script. Returns false if the executor is already running.
@@ -157,6 +183,7 @@ public class CodeExecutor
   private void ThreadEntry() {
     _gameManager.QueueOutputTextInfo("");
     var engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
+    engine.RedirectStdout(_consoleWriter);
     engine.Register(this);
     var collection = new DiagnosticCollection();
     if (!engine.Compile(_source, _defaultModuleName, collection)) {
