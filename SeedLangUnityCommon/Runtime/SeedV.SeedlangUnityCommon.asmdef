@@ -1,16 +1,16 @@
 {
-    "name": "Main",
+    "name": "SeedlangUnityCommon",
     "rootNamespace": "",
     "references": [
-        "GUID:6055be8ebefd69e48b49212b09b47b2f",
-        "GUID:d99553a31c72e46bf9db8f5f3cb50bdd",
-        "GUID:a4b5feaefb6a04e46a8538a9bf2a4716"
+        "GUID:6055be8ebefd69e48b49212b09b47b2f"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
-    "precompiledReferences": [],
+    "precompiledReferences": [
+        "SeedLang.dll"
+    ],
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],

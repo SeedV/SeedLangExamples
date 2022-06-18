@@ -1,0 +1,13 @@
+{
+  "name": "com.seedv.seedlang-unity-common",
+  "version": "0.1.0",
+  "displayName": "SeedLang Unity Common",
+  "description": "Common utilities to embed SeedLang to Unity",
+  "unity": "2020.1",
+  "dependencies": {
+  },
+  "author": {
+    "name": "The SeedV Lab",
+    "url": "https://www.seedv.com"
+  }
+}

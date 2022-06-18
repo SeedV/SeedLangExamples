@@ -24,7 +24,7 @@ using SeedLang;
 
 namespace CodeEditor {
   // The main controller of the code editor.
-  public class EditorManager : MonoBehaviour {
+  public class EditorManager {
     // The wrap info of a code line. In our editor, a code line can be wrapped to more than one
     // editor lines.
     private class LineWrapInfo {
@@ -43,14 +43,26 @@ namespace CodeEditor {
     // SeedLang engine instance.
     private readonly Engine _engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
 
-    // The root UI object of the code editor. It must be a TextMeshPro InputField object.
-    public TMP_InputField InputField;
+    public string Text {
+      get {
+        return _inputField.text;
+      }
+      set {
+        _inputField.text = value;
+      }
+    }
 
     // Enables or disables the auto-conversion from tab to spaces.
     public bool TabToSpaces = true;
 
     // Number of spaces that a tab is equal to.
     public int TabSize = EditorConfig.DefaultTabSize;
+
+    // A MonoBehavior object that can start a Unity coroutine.
+    private MonoBehaviour _gameManager;
+
+    // The root UI object of the code editor. It must be a TextMeshPro InputField object.
+    private TMP_InputField _inputField;
 
     // The default text object of the InputField. Typically a TextMeshPro InputField uses one text
     // object to show the typed text. In Unity we set the color of this default text object to the
@@ -81,6 +93,44 @@ namespace CodeEditor {
     // re-entry of the handler.
     private bool disableOnChangeHandler = false;
 
+    public EditorManager(MonoBehaviour gameManager,
+                         TMP_InputField inputField,
+                         TMP_Text inputText,
+                         TMP_Text overlayText,
+                         TMP_Text lineNoText,
+                         Image highlighter) {
+      _gameManager = gameManager;
+      _inputField = inputField;
+      _inputText = inputText;
+      _overlayText = overlayText;
+      _lineNoText = lineNoText;
+      _highlighter = highlighter;
+
+      _inputText.text = "";
+      _lineNoText.text = "";
+      _overlayText.text = "";
+      _highlighter.gameObject.SetActive(false);
+
+      // Focuses on the input filed of the code editor.
+      EventSystem.current.SetSelectedGameObject(_inputField.gameObject);
+
+      // By default, _inputField sets caret color to the same color as the default text object.
+      // Since we have hidden the default text object, the caret color must be set specifically
+      // here.
+      _inputField.customCaretColor = true;
+      _inputField.caretColor = Color.black;
+
+      _inputField.onValueChanged.AddListener((code) => {
+        if (disableOnChangeHandler) {
+          disableOnChangeHandler = false;
+        } else {
+          // The editor updating logic must run in a coroutine since _inputText.textInfo won't be
+          // updated until the next frame.
+          _gameManager.StartCoroutine(UpdateEditor(code));
+        }
+      });
+    }
+
     // Highlights a code line. lineNo starts from 1. Hides the highlight bar if lineNo <= 0.
     public void HighlightLine(int lineNo) {
       if (lineNo <= 0) {
@@ -92,48 +142,14 @@ namespace CodeEditor {
       }
     }
 
-    void Start() {
-      var textArea = InputField.gameObject.transform.Find("TextArea");
-      _inputText = textArea.Find("InputText").GetComponent<TMP_Text>();
-      Debug.Assert(!(_inputText is null));
-      _inputText.text = "";
-      _lineNoText = _inputText.gameObject.transform.Find("LineNoText")?.GetComponent<TMP_Text>();
-      Debug.Assert(!(_lineNoText is null));
-      _lineNoText.text = "";
-      _overlayText = _inputText.gameObject.transform.Find("OverlayText")?.GetComponent<TMP_Text>();
-      Debug.Assert(!(_overlayText is null));
-      _overlayText.text = "";
-      _highlighter = _inputText.gameObject.transform.Find("Highlighter")?.GetComponent<Image>();
-      Debug.Assert(!(_highlighter is null));
-      _highlighter.gameObject.SetActive(false);
-
-      // Focuses on the input filed of the code editor.
-      EventSystem.current.SetSelectedGameObject(InputField.gameObject);
-
-      // By default, InputField sets caret color to the same color as the default text object. Since
-      // we have hidden the default text object, the caret color must be set specifically here.
-      InputField.customCaretColor = true;
-      InputField.caretColor = Color.black;
-
-      InputField.onValueChanged.AddListener((code) => {
-        if (disableOnChangeHandler) {
-          disableOnChangeHandler = false;
-        } else {
-          // The editor updating logic must run in a coroutine since _inputText.textInfo won't be
-          // updated until the next frame.
-          StartCoroutine(UpdateEditor(code));
-        }
-      });
-    }
-
     private IEnumerator UpdateEditor(string code) {
       var tokens = _engine.ParseSyntaxTokens(code, "");
       bool enterKey = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
-      int caretPos = InputField.caretPosition;
+      int caretPos = _inputField.caretPosition;
       string indention = enterKey ? AutoIndenter.GetIndention(code, caretPos) : null;
       string spacesPerTab = TabToSpaces ? new string(EditorConfig.Space, TabSize) : null;
       CodeFomatter.FormatAndColor(code,
-                                  InputField.caretPosition,
+                                  _inputField.caretPosition,
                                   indention,
                                   TabToSpaces ? TabSize : 0,
                                   tokens,
@@ -154,14 +170,14 @@ namespace CodeEditor {
       // Updates the input text and the caret pos in the next frame.
       if (changed) {
         disableOnChangeHandler = true;
-        InputField.text = formatted;
-        InputField.caretPosition = newCaretPos;
+        _inputField.text = formatted;
+        _inputField.caretPosition = newCaretPos;
       }
     }
 
     private void UpdateLineNoText() {
-      // Note that InputField.text is not suitable for the following calculation, since
-      // InputField.text contains an extra leading zero-width space '\u200B' for layout purposes.
+      // Note that _inputField.text is not suitable for the following calculation, since
+      // _inputField.text contains an extra leading zero-width space '\u200B' for layout purposes.
       // _inputText.text and _inputText.textInfo must be used instead.
       var wrapInfoOfLines = GetWrapInfoOfLines(0, 0);
       var lineNoString = new StringBuilder();
