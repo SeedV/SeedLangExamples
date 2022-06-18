@@ -23,7 +23,7 @@
 # Sets up.
 readonly TEMP_DIR="./Temp"
 readonly TEMP_PLUGINS_DIR="${TEMP_DIR}/Plugins"
-readonly PLUGINS_DIR="Runtime/Plugins"
+readonly PLUGINS_DIR="SeedLangUnityCommon/Runtime/Plugins"
 if [[ ! -d "${TEMP_DIR}" ]]; then
   mkdir "${TEMP_DIR}"
 fi
