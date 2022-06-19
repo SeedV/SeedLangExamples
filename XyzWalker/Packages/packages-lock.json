@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.seedv.seedlang-unity-common": {
+      "version": "file:../../SeedLangUnityCommon",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.collab-proxy": {
       "version": "1.15.17",
       "depth": 0,
