@@ -25,6 +25,16 @@ public class Stacks2D : MonoBehaviour {
   private List<int> _stackCubeNums = new List<int>();
   private List<TMP_Text> _stackTags = new List<TMP_Text>();
 
+  public void Reset() {
+    for (int i = 0; i < Config.StackCount; i++) {
+      for (int j = 0; j < _stackCubeNums[i]; j++) {
+        _stackCubes[i][j].GetComponent<Image>().color = _emptyColor;
+      }
+      _stackCubeNums[i] = 0;
+      SetTag(i, 0);
+    }
+  }
+
   // Clears a stack with animations.
   public IEnumerator Clear(int stackIndex) {
     Debug.Assert(stackIndex >= 0 && stackIndex < Config.StackCount);
