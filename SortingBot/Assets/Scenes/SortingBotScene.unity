@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.65870845, g: 0.683518, b: 0.68521434, a: 1}
+  m_IndirectSpecularColor: {r: 0.65870786, g: 0.6835172, b: 0.6852136, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1554,7 +1554,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 748069121}
   m_HandleRect: {fileID: 748069120}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -2594,7 +2594,7 @@ MonoBehaviour:
   Robot: {fileID: 648200609}
   Stacks3D: {fileID: 315934155}
   Stacks2D: {fileID: 1506702783}
-  CodeEditor: {fileID: 512731461}
+  CodeEditorInputField: {fileID: 512731458}
   Inspector: {fileID: 1846550867}
   ExamplesDropdown: {fileID: 1307884259}
 --- !u!4 &476439446
@@ -2872,7 +2872,6 @@ GameObject:
   - component: {fileID: 512731460}
   - component: {fileID: 512731459}
   - component: {fileID: 512731458}
-  - component: {fileID: 512731461}
   m_Layer: 5
   m_Name: CodeEditor
   m_TagString: Untagged
@@ -3039,21 +3038,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 512731456}
   m_CullTransparentMesh: 1
---- !u!114 &512731461
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 512731456}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 580553cb52aed46eb96d97dc2b36b799, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  InputField: {fileID: 512731458}
-  TabToSpaces: 1
-  TabSize: 4
 --- !u!1 &525627404
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,21 +1,22 @@
 {
-    "name": "Tests",
+    "name": "SeedlangUnityCommon.Editor.Tests",
     "rootNamespace": "",
     "references": [
+        "SeedlangUnityCommon",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "Main"
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
+    "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll"
+        "nunit.framework.dll",
+        "SeedLang.dll"
     ],
-    "autoReferenced": true,
+    "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],

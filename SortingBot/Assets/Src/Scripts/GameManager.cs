@@ -16,6 +16,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 using CodeEditor;
 using CoroutineActions;
@@ -24,27 +25,49 @@ using SeedLang.Common;
 public class GameManager : MonoBehaviour {
   private const float _robotGotoStackZPos = -4f;
   private readonly ActionQueue _actionQueue = new ActionQueue();
-  private readonly CodeExecutor _codeExecutor;
 
   public Robot Robot;
   public Stacks3D Stacks3D;
   public Stacks2D Stacks2D;
-  public EditorManager CodeEditor;
+  public TMP_InputField CodeEditorInputField;
   public Inspector Inspector;
   public TMP_Dropdown ExamplesDropdown;
 
   public bool IsActionQueueEmpty => _actionQueue.IsEmpty;
 
-  public GameManager() {
+  private CodeExecutor _codeExecutor;
+  private EditorManager _editor;
+
+  public void Start() {
     _codeExecutor = new CodeExecutor(this);
-    // TODO: overload and redirect SeedLang runtime's print() function.
+
+    var textArea = CodeEditorInputField.gameObject.transform.Find("TextArea");
+    var inputText = textArea.Find("InputText").GetComponent<TMP_Text>();
+    Debug.Assert(!(inputText is null));
+    var lineNoText = inputText.gameObject.transform.Find("LineNoText")?.GetComponent<TMP_Text>();
+    Debug.Assert(!(lineNoText is null));
+    var overlayText = inputText.gameObject.transform.Find("OverlayText")?.GetComponent<TMP_Text>();
+    Debug.Assert(!(overlayText is null));
+    var highlighter = inputText.gameObject.transform.Find("Highlighter")?.GetComponent<Image>();
+    Debug.Assert(!(highlighter is null));
+    _editor = new EditorManager(this,
+                                CodeEditorInputField,
+                                inputText,
+                                overlayText,
+                                lineNoText,
+                                highlighter);
+
+    SetupExamplesDropdown();
+
+    // Starts and keeps the action queue running during the life cycle of the application.
+    StartCoroutine(_actionQueue.Run());
   }
 
   // Event handler when user runs the program.
   public void OnRun() {
     // TODO: disable the "Run" button when a program is running.
     Inspector.Clear();
-    _codeExecutor.Run(CodeEditor.InputField.text);
+    _codeExecutor.Run(_editor.Text);
   }
 
   // Event handler when user stops the running of the program.
@@ -58,7 +81,7 @@ public class GameManager : MonoBehaviour {
         ExamplesDropdown.value >= 0 &&
         ExamplesDropdown.value < ExampleCode.Examples.Count) {
       string code = ExampleCode.Examples[ExamplesDropdown.value].code;
-      CodeEditor.InputField.text = code;
+      _editor.Text = code;
     }
   }
 
@@ -112,12 +135,6 @@ public class GameManager : MonoBehaviour {
     }
   }
 
-  void Start() {
-    SetupExamplesDropdown();
-    // Starts and keeps the action queue running during the life cycle of the application.
-    StartCoroutine(_actionQueue.Run());
-  }
-
   private void QueueRobotGoHome() {
     var task = new Task0(Robot.GoHome);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
@@ -166,7 +183,7 @@ public class GameManager : MonoBehaviour {
   }
 
   private IEnumerator HighlightCodeLineTask(int lineNo, float secondsToWait) {
-    CodeEditor.HighlightLine(lineNo);
+    _editor.HighlightLine(lineNo);
     yield return new WaitForSeconds(secondsToWait);
   }
 }
