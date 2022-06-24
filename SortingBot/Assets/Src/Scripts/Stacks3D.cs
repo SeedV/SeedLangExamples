@@ -42,13 +42,21 @@ public class Stacks3D : MonoBehaviour {
     return _stackBasePositions[stackIndex];
   }
 
+  public void Reset() {
+    foreach (var stackCubeList in _stackCubes) {
+      foreach (var cube in stackCubeList) {
+        Object.Destroy(cube);
+      }
+      stackCubeList.Clear();
+    }
+  }
+
   // Clears a stack with animations.
   public IEnumerator Clear(int stackIndex) {
     Debug.Assert(stackIndex >= 0 && stackIndex < Config.StackCount);
     for (int i = _stackCubes[stackIndex].Count - 1; i >= 0; i--) {
       yield return new WaitForSeconds(Config.StackCubeSetupInterval);
       var cube = _stackCubes[stackIndex][i];
-      cube.SetActive(false);
       Object.Destroy(cube);
     }
     _stackCubes[stackIndex].Clear();

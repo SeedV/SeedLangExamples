@@ -26,6 +26,9 @@ public class GameManager : MonoBehaviour {
   private const float _robotGotoStackZPos = -4f;
   private readonly ActionQueue _actionQueue = new ActionQueue();
 
+  public Button RunButton;
+  public Button StopButton;
+  public Button LoadButton;
   public Robot Robot;
   public Stacks3D Stacks3D;
   public Stacks2D Stacks2D;
@@ -65,9 +68,9 @@ public class GameManager : MonoBehaviour {
 
   // Event handler when user runs the program.
   public void OnRun() {
-    // TODO: disable the "Run" button when a program is running.
-    Inspector.Clear();
+    Reset();
     _codeExecutor.Run(_editor.Text);
+    UpdateButtons();
   }
 
   // Event handler when user stops the running of the program.
@@ -135,6 +138,17 @@ public class GameManager : MonoBehaviour {
     }
   }
 
+  public void QueueOnExecutorComplete() {
+    var task = new Task0(UpdateButtonsTask);
+    _actionQueue.Enqueue(new SingleTaskAction(this, task));
+  }
+
+  private void Reset() {
+    Inspector.Clear();
+    Stacks3D.Reset();
+    Stacks2D.Reset();
+  }
+
   private void QueueRobotGoHome() {
     var task = new Task0(Robot.GoHome);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
@@ -185,5 +199,16 @@ public class GameManager : MonoBehaviour {
   private IEnumerator HighlightCodeLineTask(int lineNo, float secondsToWait) {
     _editor.HighlightLine(lineNo);
     yield return new WaitForSeconds(secondsToWait);
+  }
+
+  private void UpdateButtons() {
+    RunButton.interactable = !_codeExecutor.IsRunning;
+    LoadButton.interactable = !_codeExecutor.IsRunning;
+    StopButton.interactable = _codeExecutor.IsRunning;
+  }
+
+  private IEnumerator UpdateButtonsTask() {
+    UpdateButtons();
+    yield return null;
   }
 }

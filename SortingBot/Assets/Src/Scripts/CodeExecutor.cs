@@ -85,6 +85,7 @@ public class CodeExecutor
     lock (_threadLock) {
       if (_thread is null) {
         _source = source;
+        Stopping = false;
         _thread = new Thread(ThreadEntry);
         _thread.Start();
       } else {
@@ -99,23 +100,24 @@ public class CodeExecutor
     if (Stopping) {
       vm.Stop();
       Stopping = false;
-    }
+    } else {
 
-    // Highlights the current line.
-    _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
+      // Highlights the current line.
+      _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
 
-    // A temporary solution to check the compare VTag.
-    //
-    // TODO: Migrate to the Compare event when the event supports getting semantic variable info.
-    if (_currentVTags.TryGetValue(_compareVTag, out VTagInfo tag)) {
-      if (tag.Values[0].IsNumber && tag.Values[1].IsNumber) {
-        int index1 = (int)(tag.Values[0].AsNumber());
-        int index2 = (int)(tag.Values[1].AsNumber());
-        _gameManager.QueueCompare(index1, index2);
-        _currentVTags.Remove(_compareVTag);
+      // A temporary solution to check the compare VTag.
+      //
+      // TODO: Migrate to the Compare event when the event supports getting semantic variable info.
+      if (_currentVTags.TryGetValue(_compareVTag, out VTagInfo tag)) {
+        if (tag.Values[0].IsNumber && tag.Values[1].IsNumber) {
+          int index1 = (int)(tag.Values[0].AsNumber());
+          int index2 = (int)(tag.Values[1].AsNumber());
+          _gameManager.QueueCompare(index1, index2);
+          _currentVTags.Remove(_compareVTag);
+        }
       }
+      WaitForActionQueueComplete();
     }
-    WaitForActionQueueComplete();
   }
 
   public void On(Event.Assignment e, IVM vm) {
@@ -195,6 +197,7 @@ public class CodeExecutor
       _gameManager.QueueOutputTextInfo("Done.");
     }
     _thread = null;
+    _gameManager.QueueOnExecutorComplete();
   }
 
 }
