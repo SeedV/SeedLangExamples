@@ -111,9 +111,7 @@ public class CodeExecutor
     WaitForActionQueueComplete();
   }
 
-  // This method is used to synchronize the executor thread and the main UI thread. For example, it
-  // will be confusing if the main UI thread is still playing the swapping animation while the
-  // executor thread has finished the program.
+  // This method is used to synchronize the executor thread and the main UI thread.
   //
   // TODO: design and implement a better synchronizing solution between the UI and the executor.
   private void WaitForActionQueueComplete() {

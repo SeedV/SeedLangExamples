@@ -44,9 +44,9 @@ public class Blocks : MonoBehaviour {
 
   public void Start() {
     var blockRef = transform.Find("BlockRef")?.gameObject;
+    Debug.Assert(!(blockRef is null));
     var posRef = blockRef.transform.localPosition;
     blockRef.SetActive(false);
-    Debug.Assert(!(blockRef is null));
     for (int row = 0; row < Rows; row++) {
       _blocks.Add(new List<GameObject>());
       for (int col = 0; col < Cols; col++) {

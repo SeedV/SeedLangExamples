@@ -19,9 +19,9 @@ public class Boy : MonoBehaviour {
   private const string _walkTrigger = "Walk";
   private const string _standTrigger = "Stand";
   private const string _jumpTrigger = "Jump";
-  private float _defaultX = -45f;
-  private float _defaultZ = -45f;
-  private float _defaultAngleY = 135f;
+  private const float _defaultX = -45f;
+  private const float _defaultZ = -45f;
+  private const float _defaultAngleY = 135f;
   private const float _animInterval = .03f;
   private const int _rotateSteps = 20;
   private const float _walkStepsPerUnit = 3f;

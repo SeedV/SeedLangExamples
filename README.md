@@ -9,7 +9,7 @@ Common libraries for integrating SeedLang with Unity games or applications:
 
 - An in-game code editor for SeedLang. It supports modern IDE features such as
   syntax highlighting, auto indention, etc.
-- A coroutine-based action queue framework to queue animation or other tasks
+- A coroutine-based action queue framework to queue animations or other tasks
   into Unity's main thread. With this framework, we can run SeedLang in a
   separate thread and synchronize with Unity's main thread easily.
 
