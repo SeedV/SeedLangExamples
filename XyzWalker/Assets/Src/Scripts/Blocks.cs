@@ -17,12 +17,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Blocks : MonoBehaviour {
-  public const int Rows = 10;
-  public const int Cols = 10;
-  private const float _startX = -4.5f;
-  private const float _stepX = 1.0f;
-  private const float _startZ = -4.5f;
-  private const float _stepZ = 1.0f;
+  private const int _minSize = 10;
+  private const int _maxSize = 100;
+  private const float _unitSize = 1.0f;
   private const float _animInterval = .03f;
   private const int _animSteps = 60;
   private readonly Color _defaultBlockColor = Color.black;
@@ -42,28 +39,22 @@ public class Blocks : MonoBehaviour {
 
   private readonly List<List<GameObject>> _blocks = new List<List<GameObject>>();
 
+  public int Size => _size;
+
+  private int _size = _minSize;
+  private GameObject _blockRef;
+
   public void Start() {
-    var blockRef = transform.Find("BlockRef")?.gameObject;
-    Debug.Assert(!(blockRef is null));
-    var posRef = blockRef.transform.localPosition;
-    blockRef.SetActive(false);
-    for (int row = 0; row < Rows; row++) {
-      _blocks.Add(new List<GameObject>());
-      for (int col = 0; col < Cols; col++) {
-        var block = Object.Instantiate(blockRef, transform);
-        float x = _startX + _stepX * col;
-        float z = _startZ + _stepZ * row;
-        block.transform.localPosition = new Vector3(x, posRef.y, z);
-        block.SetActive(true);
-        _blocks[row].Add(block);
-      }
-    }
-    Reset();
+    _blockRef = transform.Find("BlockRef")?.gameObject;
+    Debug.Assert(!(_blockRef is null));
+    _blockRef.SetActive(false);
+    Resize(50);
+    ResetColors();
   }
 
-  public void Reset() {
-    for (int row = 0; row < Rows; row++) {
-      for (int col = 0; col < Cols; col++) {
+  public void ResetColors() {
+    for (int row = 0; row < _size; row++) {
+      for (int col = 0; col < _size; col++) {
         var block = _blocks[row][col];
         block.GetComponent<Renderer>().material.color = _defaultBlockColor;
       }
@@ -74,10 +65,16 @@ public class Blocks : MonoBehaviour {
     return _blocks[row][col].transform.position;
   }
 
+  public void Resize(int size) {
+    Clear();
+    _size = Mathf.Clamp(size, _minSize, _maxSize);
+    Setup();
+  }
+
   public IEnumerator SetBlockColor(int row, int col, int colorIndex) {
     var block = _blocks[row][col];
     var fromColor = block.GetComponent<Renderer>().material.color;
-    var toColor = _blockColors[colorIndex % 10];
+    var toColor = _blockColors[colorIndex % _blockColors.Count];
     if (fromColor != Color.black) {
       yield return ColorStep(block, fromColor, Color.black, _animSteps / 4);
     }
@@ -91,6 +88,32 @@ public class Blocks : MonoBehaviour {
       var color = Vector4.Lerp(fromColor, toColor, (float)i / (float)steps);
       obj.GetComponent<Renderer>().material.color = color;
       yield return new WaitForSeconds(_animInterval);
+    }
+  }
+
+  private void Clear() {
+    foreach (var row in _blocks) {
+      foreach (var block in row) {
+        Object.Destroy(block);
+      }
+    }
+    _blocks.Clear();
+  }
+
+  private void Setup() {
+    var posRef = _blockRef.transform.localPosition;
+    float startX = _size / 2.0f - 0.5f - (_size - 1) * _unitSize;
+    float startZ = startX;
+    for (int row = 0; row < _size; row++) {
+      _blocks.Add(new List<GameObject>());
+      for (int col = 0; col < _size; col++) {
+        var block = Object.Instantiate(_blockRef, transform);
+        float x = startX + _unitSize * col;
+        float z = startZ + _unitSize * row;
+        block.transform.localPosition = new Vector3(x, posRef.y, z);
+        block.SetActive(true);
+        _blocks[row].Add(block);
+      }
     }
   }
 }

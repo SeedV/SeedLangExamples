@@ -123,7 +123,7 @@ public class GameManager : MonoBehaviour {
     TextConsole.text = "";
     _currentValue = Vector3.zero;
     Boy.Reset();
-    Blocks.Reset();
+    Blocks.ResetColors();
   }
 
   private void QueueMoveXY(float x, float y) {
