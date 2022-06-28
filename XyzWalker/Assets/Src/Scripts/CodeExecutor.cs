@@ -48,8 +48,8 @@ public class CodeExecutor
   }
 
   private const string _defaultModuleName = "Program";
-  private const int _minSleepInMilliSeconds = 30;
-  private const float _singleStepWaitInSeconds = .5f;
+  private const int _minSleepInMilliSeconds = 10;
+  private const float _singleStepWaitInSeconds = .1f;
 
   private readonly GameManager _gameManager;
   private readonly ConsoleWriter _consoleWriter;

@@ -21,9 +21,9 @@ public class Boy : MonoBehaviour {
   private const string _jumpTrigger = "Jump";
   private const float _defaultAngleY = 135f;
   private const float _animInterval = .03f;
-  private const int _rotateSteps = 20;
-  private const float _walkStepsPerUnit = 3f;
-  private const float _jumpTime = 2.1f;
+  private const int _rotateSteps = 10;
+  private const float _walkStepsPerUnit = 1f;
+  private const float _jumpTime = 1.0f;
 
   private Animator _animator;
 
@@ -39,17 +39,15 @@ public class Boy : MonoBehaviour {
   public IEnumerator MoveToWorldPosCoroutine(float toX, float toZ) {
     var from = transform.position;
     var to = new Vector3(toX, from.y, toZ);
-    float deltaX = toX - from.x;
-    float deltaZ = toZ - from.z;
-    float fromAngleY = (transform.eulerAngles.y + 360f) % 360f;
-    float toAngleY = ((Mathf.Atan2(deltaX, deltaZ) * Mathf.Rad2Deg) + 360f) % 360f;
+    var delta = to - from;
 
     // Rotates.
+    var fromRotation = transform.rotation;
+    var toRotation = Quaternion.LookRotation(delta, Vector3.up);
     _animator.SetTrigger(_walkTrigger);
     int steps = _rotateSteps;
     for (int i = 1; i <= steps; i++) {
-      float angleY = Mathf.SmoothStep(fromAngleY, toAngleY, (float)i / (float)steps);
-      transform.eulerAngles = new Vector3(0, angleY, 0);
+      transform.rotation = Quaternion.Lerp(fromRotation, toRotation, (float)i / (float)steps);
       yield return new WaitForSeconds(_animInterval);
     }
 
