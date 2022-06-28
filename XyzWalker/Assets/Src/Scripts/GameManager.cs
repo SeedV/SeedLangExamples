@@ -88,9 +88,9 @@ public class GameManager : MonoBehaviour {
 
   public void QueueVisualizeX(float x) {
     if (x < 0 || x > Blocks.Size - 1) {
-      QueueOutputTextInfo($"The x value is clamped to 0, {Blocks.Size - 1}]");
+      QueueOutputTextInfo($"x is converted to [0, {Blocks.Size - 1}]");
     }
-    int value = Mathf.Clamp((int)x, 0, Blocks.Size - 1);
+    int value = Utils.Modulo((int)x, Blocks.Size);
     if (_currentValue.x != value) {
       QueueMoveXY(value, _currentValue.y);
       _currentValue.x = value;
@@ -99,9 +99,9 @@ public class GameManager : MonoBehaviour {
 
   public void QueueVisualizeY(float y) {
     if (y < 0 || y > Blocks.Size - 1) {
-      QueueOutputTextInfo($"The y value is clamped to [0, {Blocks.Size - 1}]");
+      QueueOutputTextInfo($"y is converted to [0, {Blocks.Size - 1}]");
     }
-    int value = Mathf.Clamp((int)y, 0, Blocks.Size - 1);
+    int value = Utils.Modulo((int)y, Blocks.Size);
     if (_currentValue.y != value) {
       QueueMoveXY(_currentValue.x, value);
       _currentValue.y = value;
@@ -110,16 +110,16 @@ public class GameManager : MonoBehaviour {
 
   public void QueueVisualizeZ(float z) {
     if (z < 0 || z > Blocks.ColorNum - 1) {
-      QueueOutputTextInfo($"The z value is clamped to[0, {Blocks.ColorNum - 1}]");
+      QueueOutputTextInfo($"z is converted to [0, {Blocks.ColorNum - 1}]");
     }
-    int value = Mathf.Clamp((int)z, 0, Blocks.ColorNum - 1);
+    int value = Utils.Modulo((int)z, Blocks.ColorNum);
     QueueSetColor(_currentValue.x, _currentValue.y, value);
     _currentValue.z = value;
   }
 
   public void QueueVisualizeSize(float size) {
     if (size < Blocks.MinSize || size > Blocks.MaxSize) {
-      QueueOutputTextInfo($"The size value is clamped to [{Blocks.MinSize}, {Blocks.MaxSize}]");
+      QueueOutputTextInfo($"size is clamped to [{Blocks.MinSize}, {Blocks.MaxSize}]");
     }
     int newSize = Mathf.Clamp((int)size, Blocks.MinSize, Blocks.MaxSize);
     if (_currentGroundSize != newSize) {
