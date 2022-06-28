@@ -18,24 +18,31 @@ using UnityEngine;
 
 public class Blocks : MonoBehaviour {
   public const int MinSize = 10;
-  public const int MaxSize = 100;
+  public const int MaxSize = 40;
 
   private const float _unitSize = 1.0f;
   private const float _animInterval = .03f;
-  private const int _animSteps = 60;
-  private readonly Color _defaultBlockColor = Color.black;
+  private const int _animSteps = 15;
+  private readonly Color _defaultBlockColor = new Color32(0xd8, 0xd8, 0xd8, 0xff);
 
+  // The 16 basic web colors. See https://en.wikipedia.org/wiki/Web_colors
   private static readonly List<Color> _blockColors = new List<Color> {
-    new Color32(0xff, 0xff, 0xff, 0xff),
-    new Color32(0xff, 0x99, 0x00, 0xff),
-    new Color32(0xff, 0x00, 0x99, 0xff),
-    new Color32(0x99, 0xff, 0x00, 0xff),
-    new Color32(0x99, 0x00, 0xff, 0xff),
-    new Color32(0x00, 0xff, 0x00, 0xff),
-    new Color32(0x00, 0x99, 0xff, 0xff),
-    new Color32(0xff, 0xff, 0x66, 0xff),
-    new Color32(0xff, 0x66, 0xff, 0xff),
-    new Color32(0x66, 0xff, 0xff, 0xff),
+    new Color32(0xff, 0xff, 0xff, 0xff),  // White
+    new Color32(0xc0, 0xc0, 0xc0, 0xff),  // Silver
+    new Color32(0x80, 0x80, 0x80, 0xff),  // Gray
+    new Color32(0x00, 0x00, 0x00, 0xff),  // Black
+    new Color32(0xff, 0x00, 0x00, 0xff),  // Red
+    new Color32(0x80, 0x00, 0x00, 0xff),  // Maroon
+    new Color32(0xff, 0xff, 0x00, 0xff),  // Yellow
+    new Color32(0x80, 0x80, 0x00, 0xff),  // Olive
+    new Color32(0x00, 0xff, 0x00, 0xff),  // Lime
+    new Color32(0x00, 0x80, 0x00, 0xff),  // Green
+    new Color32(0x00, 0xff, 0xff, 0xff),  // Aqua
+    new Color32(0x00, 0x80, 0x80, 0xff),  // Teal
+    new Color32(0x00, 0x00, 0xff, 0xff),  // Blue
+    new Color32(0x00, 0x00, 0x80, 0xff),  // Navy
+    new Color32(0xff, 0x00, 0xff, 0xff),  // Fuchsia
+    new Color32(0x80, 0x00, 0x80, 0xff),  // Purple
   };
 
   private readonly List<List<GameObject>> _blocks = new List<List<GameObject>>();
@@ -80,16 +87,16 @@ public class Blocks : MonoBehaviour {
     var fromColor = block.GetComponent<Renderer>().material.color;
     var toColor = _blockColors[colorIndex];
     if (fromColor != Color.black) {
-      yield return ColorStepCoroutine(block, fromColor, Color.black, _animSteps / 4);
+      yield return ColorStepCoroutine(block, fromColor, _defaultBlockColor);
     }
-    yield return ColorStepCoroutine(block, Color.black, toColor, _animSteps / 4);
-    yield return ColorStepCoroutine(block, toColor, Color.black, _animSteps / 4);
-    yield return ColorStepCoroutine(block, Color.black, toColor, _animSteps / 4);
+    yield return ColorStepCoroutine(block, _defaultBlockColor, toColor);
   }
 
-  private IEnumerator ColorStepCoroutine(GameObject obj, Color fromColor, Color toColor, int steps) {
-    for (int i = 1; i <= steps; i++) {
-      var color = Vector4.Lerp(fromColor, toColor, (float)i / (float)steps);
+  private IEnumerator ColorStepCoroutine(GameObject obj,
+                                         Color fromColor,
+                                         Color toColor) {
+    for (int i = 1; i <= _animSteps; i++) {
+      var color = Vector4.Lerp(fromColor, toColor, (float)i / (float)_animSteps);
       obj.GetComponent<Renderer>().material.color = color;
       yield return new WaitForSeconds(_animInterval);
     }
