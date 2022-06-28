@@ -88,9 +88,9 @@ public class GameManager : MonoBehaviour {
 
   public void QueueVisualizeX(float x) {
     if (x < 0 || x > Blocks.Size - 1) {
-      QueueOutputTextInfo($"The x value is converted to the range [0, {Blocks.Size - 1}]");
+      QueueOutputTextInfo($"The x value is clamped to 0, {Blocks.Size - 1}]");
     }
-    int value = (int)x % Blocks.Size;
+    int value = Mathf.Clamp((int)x, 0, Blocks.Size - 1);
     if (_currentValue.x != value) {
       QueueMoveXY(value, _currentValue.y);
       _currentValue.x = value;
@@ -99,9 +99,9 @@ public class GameManager : MonoBehaviour {
 
   public void QueueVisualizeY(float y) {
     if (y < 0 || y > Blocks.Size - 1) {
-      QueueOutputTextInfo($"The y value is converted to the range [0, {Blocks.Size - 1}]");
+      QueueOutputTextInfo($"The y value is clamped to [0, {Blocks.Size - 1}]");
     }
-    int value = (int)y % Blocks.Size;
+    int value = Mathf.Clamp((int)y, 0, Blocks.Size - 1);
     if (_currentValue.y != value) {
       QueueMoveXY(_currentValue.x, value);
       _currentValue.y = value;
@@ -109,10 +109,10 @@ public class GameManager : MonoBehaviour {
   }
 
   public void QueueVisualizeZ(float z) {
-    if (z < 0 || z > Blocks.Size - 1) {
-      QueueOutputTextInfo($"The z value is converted to the range [0, {Blocks.ColorNum - 1}]");
+    if (z < 0 || z > Blocks.ColorNum - 1) {
+      QueueOutputTextInfo($"The z value is clamped to[0, {Blocks.ColorNum - 1}]");
     }
-    int value = (int)z % Blocks.ColorNum;
+    int value = Mathf.Clamp((int)z, 0, Blocks.ColorNum - 1);
     QueueSetColor(_currentValue.x, _currentValue.y, value);
     _currentValue.z = value;
   }
