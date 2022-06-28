@@ -17,8 +17,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Blocks : MonoBehaviour {
-  private const int _minSize = 10;
-  private const int _maxSize = 100;
+  public const int MinSize = 10;
+  public const int MaxSize = 100;
+
   private const float _unitSize = 1.0f;
   private const float _animInterval = .03f;
   private const int _animSteps = 60;
@@ -40,15 +41,16 @@ public class Blocks : MonoBehaviour {
   private readonly List<List<GameObject>> _blocks = new List<List<GameObject>>();
 
   public int Size => _size;
+  public int ColorNum => _blockColors.Count;
 
-  private int _size = _minSize;
+  private int _size = MinSize;
   private GameObject _blockRef;
 
   public void Start() {
     _blockRef = transform.Find("BlockRef")?.gameObject;
     Debug.Assert(!(_blockRef is null));
     _blockRef.SetActive(false);
-    Resize(50);
+    Setup();
     ResetColors();
   }
 
@@ -66,24 +68,26 @@ public class Blocks : MonoBehaviour {
   }
 
   public void Resize(int size) {
+    Debug.Assert(size >= MinSize & size <= MaxSize);
     Clear();
-    _size = Mathf.Clamp(size, _minSize, _maxSize);
+    _size = size;
     Setup();
   }
 
-  public IEnumerator SetBlockColor(int row, int col, int colorIndex) {
+  public IEnumerator SetBlockColorCoroutine(int row, int col, int colorIndex) {
+    Debug.Assert(colorIndex >= 0 && colorIndex < ColorNum);
     var block = _blocks[row][col];
     var fromColor = block.GetComponent<Renderer>().material.color;
-    var toColor = _blockColors[colorIndex % _blockColors.Count];
+    var toColor = _blockColors[colorIndex];
     if (fromColor != Color.black) {
-      yield return ColorStep(block, fromColor, Color.black, _animSteps / 4);
+      yield return ColorStepCoroutine(block, fromColor, Color.black, _animSteps / 4);
     }
-    yield return ColorStep(block, Color.black, toColor, _animSteps / 4);
-    yield return ColorStep(block, toColor, Color.black, _animSteps / 4);
-    yield return ColorStep(block, Color.black, toColor, _animSteps / 4);
+    yield return ColorStepCoroutine(block, Color.black, toColor, _animSteps / 4);
+    yield return ColorStepCoroutine(block, toColor, Color.black, _animSteps / 4);
+    yield return ColorStepCoroutine(block, Color.black, toColor, _animSteps / 4);
   }
 
-  private IEnumerator ColorStep(GameObject obj, Color fromColor, Color toColor, int steps) {
+  private IEnumerator ColorStepCoroutine(GameObject obj, Color fromColor, Color toColor, int steps) {
     for (int i = 1; i <= steps; i++) {
       var color = Vector4.Lerp(fromColor, toColor, (float)i / (float)steps);
       obj.GetComponent<Renderer>().material.color = color;

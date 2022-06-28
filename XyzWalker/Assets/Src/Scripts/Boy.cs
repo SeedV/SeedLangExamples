@@ -19,8 +19,6 @@ public class Boy : MonoBehaviour {
   private const string _walkTrigger = "Walk";
   private const string _standTrigger = "Stand";
   private const string _jumpTrigger = "Jump";
-  private const float _defaultX = -45f;
-  private const float _defaultZ = -45f;
   private const float _defaultAngleY = 135f;
   private const float _animInterval = .03f;
   private const int _rotateSteps = 20;
@@ -29,12 +27,16 @@ public class Boy : MonoBehaviour {
 
   private Animator _animator;
 
-  public void Reset() {
-    transform.localPosition = new Vector3(_defaultX, transform.localPosition.y, _defaultZ);
+  public void Start() {
+    _animator = GetComponent<Animator>();
+  }
+
+  public void MoveToWorldPos(float toX, float toZ) {
+    transform.localPosition = new Vector3(toX, transform.localPosition.y, toZ);
     transform.localEulerAngles = new Vector3(0, _defaultAngleY, 0);
   }
 
-  public IEnumerator MoveToWorldPos(float toX, float toZ) {
+  public IEnumerator MoveToWorldPosCoroutine(float toX, float toZ) {
     var from = transform.position;
     var to = new Vector3(toX, from.y, toZ);
     float deltaX = toX - from.x;
@@ -65,12 +67,8 @@ public class Boy : MonoBehaviour {
     _animator.SetTrigger(_standTrigger);
   }
 
-  public IEnumerator Jump() {
+  public IEnumerator JumpCoroutine() {
     _animator.SetTrigger(_jumpTrigger);
     yield return new WaitForSeconds(_jumpTime);
-  }
-
-  void Start() {
-    _animator = GetComponent<Animator>();
   }
 }
