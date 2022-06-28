@@ -102,7 +102,6 @@ public class CodeExecutor
       vm.Stop();
       Stopping = false;
     } else {
-
       // Highlights the current line.
       _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
       WaitForActionQueueComplete();
@@ -151,6 +150,7 @@ public class CodeExecutor
       int index1 = (int)(e.Left.Keys[0].AsNumber());
       int index2 = (int)(e.Right.Keys[0].AsNumber());
       _gameManager.QueueCompare(index1, index2);
+      WaitForActionQueueComplete();
     }
   }
 
