@@ -26,6 +26,7 @@ using SeedLang.Visualization;
 public class CodeExecutor
     : IVisualizer<Event.SingleStep>,
       IVisualizer<Event.Assignment>,
+      IVisualizer<Event.Comparison>,
       IVisualizer<Event.VTagEntered>,
       IVisualizer<Event.VTagExited> {
   private class ConsoleWriter : TextWriter {
@@ -56,7 +57,6 @@ public class CodeExecutor
 
   // Uses lower-case VTag names to support case-insensitive comparisons.
   private const string _dataVTag = "data";
-  private const string _compareVTag = "compare";
   private const string _swapVTag = "swap";
 
   private readonly GameManager _gameManager;
@@ -73,6 +73,7 @@ public class CodeExecutor
 
   private Thread _thread;
   private string _source;
+  private string _dataVariableName;
 
   public CodeExecutor(GameManager gameManager) {
     _gameManager = gameManager;
@@ -101,51 +102,55 @@ public class CodeExecutor
       vm.Stop();
       Stopping = false;
     } else {
-
       // Highlights the current line.
       _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
-
-      // A temporary solution to check the compare VTag.
-      //
-      // TODO: Migrate to the Compare event when the event supports getting semantic variable info.
-      if (_currentVTags.TryGetValue(_compareVTag, out VTagInfo tag)) {
-        if (tag.Values[0].IsNumber && tag.Values[1].IsNumber) {
-          int index1 = (int)(tag.Values[0].AsNumber());
-          int index2 = (int)(tag.Values[1].AsNumber());
-          _gameManager.QueueCompare(index1, index2);
-          _currentVTags.Remove(_compareVTag);
-        }
-      }
       WaitForActionQueueComplete();
     }
   }
 
   public void On(Event.Assignment e, IVM vm) {
-    if (_currentVTags.ContainsKey(_dataVTag) && e.Value.IsList) {
+    if (_currentVTags.ContainsKey(_dataVTag) && e.Value.IsTemporary && e.Value.Value.IsList) {
       // Inside the data VTag, checks if the data list meets the requirements.
-      if (e.Value.Length > Config.StackCount) {
+      if (e.Value.Value.Length > Config.StackCount) {
         // TODO: makes all string messages localizable.
         _gameManager.QueueOutputTextInfo(
-            $"The length of {e.Name} exceeds the limit 0-{Config.StackCount}.");
+            $"The length of {e.Target.Variable.Name} exceeds the limit 0-{Config.StackCount}.");
         vm.Stop();
         return;
       }
+      _dataVariableName = e.Target.Variable.Name;
       var intValueList = new List<int>();
-      for (int i = 0; i < e.Value.Length; i++) {
-        int intValue = (int)(e.Value[new Value(i)].AsNumber());
+      for (int i = 0; i < e.Value.Value.Length; i++) {
+        int intValue = (int)(e.Value.Value[new Value(i)].AsNumber());
         if (intValue < 0 || intValue > Config.MaxCubesPerStack) {
           _gameManager.QueueOutputTextInfo(
-              $"The value {e.Name}[{i}] exceeds the limit 0-{Config.MaxCubesPerStack}.");
+              $"The value {e.Target.Variable.Name}[{i}] exceeds " +
+              $"the limit 0-{Config.MaxCubesPerStack}.");
           vm.Stop();
           return;
         }
         intValueList.Add(intValue);
       }
-      _gameManager.QueueOutputTextInfo($"Data to sort: {e.Name} = {e.Value}");
+      _gameManager.QueueOutputTextInfo($"Data to sort: {e.Target} = {e.Value}");
       _gameManager.QueueSetupStacks(intValueList);
       WaitForActionQueueComplete();
     } else {
-      _gameManager.QueueOutputTextInfo($"Assigning: {e.Name} = {e.Value}");
+      _gameManager.QueueOutputTextInfo($"Assigning: {e.Target} = {e.Value}");
+    }
+  }
+
+  public void On(Event.Comparison e, IVM vm) {
+    if (e.Left.IsElement &&
+        e.Left.Variable.Name == _dataVariableName &&
+        e.Left.Keys.Count == 1 &&
+        e.Right.IsElement &&
+        e.Right.Variable.Name == _dataVariableName &&
+        e.Right.Keys.Count == 1) {
+      _gameManager.QueueOutputTextInfo($"Comparing: {e.Left} vs. {e.Right}");
+      int index1 = (int)(e.Left.Keys[0].AsNumber());
+      int index2 = (int)(e.Right.Keys[0].AsNumber());
+      _gameManager.QueueCompare(index1, index2);
+      WaitForActionQueueComplete();
     }
   }
 
