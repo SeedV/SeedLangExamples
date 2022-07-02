@@ -19,35 +19,35 @@ public class Boy : MonoBehaviour {
   private const string _walkTrigger = "Walk";
   private const string _standTrigger = "Stand";
   private const string _jumpTrigger = "Jump";
-  private const float _defaultX = -45f;
-  private const float _defaultZ = -45f;
   private const float _defaultAngleY = 135f;
   private const float _animInterval = .03f;
-  private const int _rotateSteps = 20;
-  private const float _walkStepsPerUnit = 3f;
-  private const float _jumpTime = 2.1f;
+  private const int _rotateSteps = 10;
+  private const float _walkStepsPerUnit = 1f;
+  private const float _jumpTime = 1.0f;
 
   private Animator _animator;
 
-  public void Reset() {
-    transform.localPosition = new Vector3(_defaultX, transform.localPosition.y, _defaultZ);
+  public void Start() {
+    _animator = GetComponent<Animator>();
+  }
+
+  public void MoveToWorldPos(float toX, float toZ) {
+    transform.localPosition = new Vector3(toX, transform.localPosition.y, toZ);
     transform.localEulerAngles = new Vector3(0, _defaultAngleY, 0);
   }
 
-  public IEnumerator MoveToWorldPos(float toX, float toZ) {
+  public IEnumerator MoveToWorldPosCoroutine(float toX, float toZ) {
     var from = transform.position;
     var to = new Vector3(toX, from.y, toZ);
-    float deltaX = toX - from.x;
-    float deltaZ = toZ - from.z;
-    float fromAngleY = (transform.eulerAngles.y + 360f) % 360f;
-    float toAngleY = ((Mathf.Atan2(deltaX, deltaZ) * Mathf.Rad2Deg) + 360f) % 360f;
+    var delta = to - from;
 
     // Rotates.
+    var fromRotation = transform.rotation;
+    var toRotation = Quaternion.LookRotation(delta, Vector3.up);
     _animator.SetTrigger(_walkTrigger);
     int steps = _rotateSteps;
     for (int i = 1; i <= steps; i++) {
-      float angleY = Mathf.SmoothStep(fromAngleY, toAngleY, (float)i / (float)steps);
-      transform.eulerAngles = new Vector3(0, angleY, 0);
+      transform.rotation = Quaternion.Lerp(fromRotation, toRotation, (float)i / (float)steps);
       yield return new WaitForSeconds(_animInterval);
     }
 
@@ -65,12 +65,8 @@ public class Boy : MonoBehaviour {
     _animator.SetTrigger(_standTrigger);
   }
 
-  public IEnumerator Jump() {
+  public IEnumerator JumpCoroutine() {
     _animator.SetTrigger(_jumpTrigger);
     yield return new WaitForSeconds(_jumpTime);
-  }
-
-  void Start() {
-    _animator = GetComponent<Animator>();
   }
 }

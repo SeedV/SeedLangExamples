@@ -17,53 +17,53 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Blocks : MonoBehaviour {
-  public const int Rows = 10;
-  public const int Cols = 10;
-  private const float _startX = -4.5f;
-  private const float _stepX = 1.0f;
-  private const float _startZ = -4.5f;
-  private const float _stepZ = 1.0f;
-  private const float _animInterval = .03f;
-  private const int _animSteps = 60;
-  private readonly Color _defaultBlockColor = Color.black;
+  public const int MinSize = 10;
+  public const int MaxSize = 40;
 
+  private const float _unitSize = 1.0f;
+  private const float _animInterval = .03f;
+  private const int _animSteps = 15;
+  private readonly Color _defaultBlockColor = new Color32(0xd8, 0xd8, 0xd8, 0xff);
+
+  // The 16 basic web colors. See https://en.wikipedia.org/wiki/Web_colors
   private static readonly List<Color> _blockColors = new List<Color> {
-    new Color32(0xff, 0xff, 0xff, 0xff),
-    new Color32(0xff, 0x99, 0x00, 0xff),
-    new Color32(0xff, 0x00, 0x99, 0xff),
-    new Color32(0x99, 0xff, 0x00, 0xff),
-    new Color32(0x99, 0x00, 0xff, 0xff),
-    new Color32(0x00, 0xff, 0x00, 0xff),
-    new Color32(0x00, 0x99, 0xff, 0xff),
-    new Color32(0xff, 0xff, 0x66, 0xff),
-    new Color32(0xff, 0x66, 0xff, 0xff),
-    new Color32(0x66, 0xff, 0xff, 0xff),
+    new Color32(0xff, 0xff, 0xff, 0xff),  // White
+    new Color32(0xc0, 0xc0, 0xc0, 0xff),  // Silver
+    new Color32(0x80, 0x80, 0x80, 0xff),  // Gray
+    new Color32(0x00, 0x00, 0x00, 0xff),  // Black
+    new Color32(0xff, 0x00, 0x00, 0xff),  // Red
+    new Color32(0x80, 0x00, 0x00, 0xff),  // Maroon
+    new Color32(0xff, 0xff, 0x00, 0xff),  // Yellow
+    new Color32(0x80, 0x80, 0x00, 0xff),  // Olive
+    new Color32(0x00, 0xff, 0x00, 0xff),  // Lime
+    new Color32(0x00, 0x80, 0x00, 0xff),  // Green
+    new Color32(0x00, 0xff, 0xff, 0xff),  // Aqua
+    new Color32(0x00, 0x80, 0x80, 0xff),  // Teal
+    new Color32(0x00, 0x00, 0xff, 0xff),  // Blue
+    new Color32(0x00, 0x00, 0x80, 0xff),  // Navy
+    new Color32(0xff, 0x00, 0xff, 0xff),  // Fuchsia
+    new Color32(0x80, 0x00, 0x80, 0xff),  // Purple
   };
 
   private readonly List<List<GameObject>> _blocks = new List<List<GameObject>>();
 
+  public int Size => _size;
+  public int ColorNum => _blockColors.Count;
+
+  private int _size = MinSize;
+  private GameObject _blockRef;
+
   public void Start() {
-    var blockRef = transform.Find("BlockRef")?.gameObject;
-    Debug.Assert(!(blockRef is null));
-    var posRef = blockRef.transform.localPosition;
-    blockRef.SetActive(false);
-    for (int row = 0; row < Rows; row++) {
-      _blocks.Add(new List<GameObject>());
-      for (int col = 0; col < Cols; col++) {
-        var block = Object.Instantiate(blockRef, transform);
-        float x = _startX + _stepX * col;
-        float z = _startZ + _stepZ * row;
-        block.transform.localPosition = new Vector3(x, posRef.y, z);
-        block.SetActive(true);
-        _blocks[row].Add(block);
-      }
-    }
-    Reset();
+    _blockRef = transform.Find("BlockRef")?.gameObject;
+    Debug.Assert(!(_blockRef is null));
+    _blockRef.SetActive(false);
+    Setup();
+    ResetColors();
   }
 
-  public void Reset() {
-    for (int row = 0; row < Rows; row++) {
-      for (int col = 0; col < Cols; col++) {
+  public void ResetColors() {
+    for (int row = 0; row < _size; row++) {
+      for (int col = 0; col < _size; col++) {
         var block = _blocks[row][col];
         block.GetComponent<Renderer>().material.color = _defaultBlockColor;
       }
@@ -74,23 +74,57 @@ public class Blocks : MonoBehaviour {
     return _blocks[row][col].transform.position;
   }
 
-  public IEnumerator SetBlockColor(int row, int col, int colorIndex) {
-    var block = _blocks[row][col];
-    var fromColor = block.GetComponent<Renderer>().material.color;
-    var toColor = _blockColors[colorIndex % 10];
-    if (fromColor != Color.black) {
-      yield return ColorStep(block, fromColor, Color.black, _animSteps / 4);
-    }
-    yield return ColorStep(block, Color.black, toColor, _animSteps / 4);
-    yield return ColorStep(block, toColor, Color.black, _animSteps / 4);
-    yield return ColorStep(block, Color.black, toColor, _animSteps / 4);
+  public void Resize(int size) {
+    Debug.Assert(size >= MinSize & size <= MaxSize);
+    Clear();
+    _size = size;
+    Setup();
   }
 
-  private IEnumerator ColorStep(GameObject obj, Color fromColor, Color toColor, int steps) {
-    for (int i = 1; i <= steps; i++) {
-      var color = Vector4.Lerp(fromColor, toColor, (float)i / (float)steps);
+  public IEnumerator SetBlockColorCoroutine(int row, int col, int colorIndex) {
+    Debug.Assert(colorIndex >= 0 && colorIndex < ColorNum);
+    var block = _blocks[row][col];
+    var fromColor = block.GetComponent<Renderer>().material.color;
+    var toColor = _blockColors[colorIndex];
+    if (fromColor != Color.black) {
+      yield return ColorStepCoroutine(block, fromColor, _defaultBlockColor);
+    }
+    yield return ColorStepCoroutine(block, _defaultBlockColor, toColor);
+  }
+
+  private IEnumerator ColorStepCoroutine(GameObject obj,
+                                         Color fromColor,
+                                         Color toColor) {
+    for (int i = 1; i <= _animSteps; i++) {
+      var color = Vector4.Lerp(fromColor, toColor, (float)i / (float)_animSteps);
       obj.GetComponent<Renderer>().material.color = color;
       yield return new WaitForSeconds(_animInterval);
+    }
+  }
+
+  private void Clear() {
+    foreach (var row in _blocks) {
+      foreach (var block in row) {
+        Object.Destroy(block);
+      }
+    }
+    _blocks.Clear();
+  }
+
+  private void Setup() {
+    var posRef = _blockRef.transform.localPosition;
+    float startX = _size / 2.0f - 0.5f - (_size - 1) * _unitSize;
+    float startZ = startX;
+    for (int row = 0; row < _size; row++) {
+      _blocks.Add(new List<GameObject>());
+      for (int col = 0; col < _size; col++) {
+        var block = Object.Instantiate(_blockRef, transform);
+        float x = startX + _unitSize * col;
+        float z = startZ + _unitSize * row;
+        block.transform.localPosition = new Vector3(x, posRef.y, z);
+        block.SetActive(true);
+        _blocks[row].Add(block);
+      }
     }
   }
 }

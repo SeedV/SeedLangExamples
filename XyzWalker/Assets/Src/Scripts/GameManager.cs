@@ -23,8 +23,12 @@ using CoroutineActions;
 using SeedLang.Common;
 
 public class GameManager : MonoBehaviour {
+  private const int _cameraAnimSteps = 20;
+  private const float _animInterval = .03f;
+  private const float _cameraMinX = 200f;
   private readonly ActionQueue _actionQueue = new ActionQueue();
 
+  public Camera Camera;
   public Button RunButton;
   public Button StopButton;
   public TMP_InputField CodeEditorInputField;
@@ -38,7 +42,10 @@ public class GameManager : MonoBehaviour {
   private EditorManager _editor;
 
   // The (x, y, z) value to be visualized.
-  private Vector3 _currentValue;
+  private Vector3Int _currentValue;
+
+  // The current ground size.
+  private int _currentGroundSize;
 
   public void Start() {
     _codeExecutor = new CodeExecutor(this);
@@ -63,14 +70,14 @@ public class GameManager : MonoBehaviour {
     StopButton.onClick.AddListener(OnStop);
     UpdateButtons();
 
-    Reset();
+    Reset(true);
 
     // Starts and keeps the action queue running during the life cycle of the application.
     StartCoroutine(_actionQueue.Run());
   }
 
   public void OnRun() {
-    Reset();
+    Reset(true);
     _codeExecutor.Run(_editor.Text);
     UpdateButtons();
   }
@@ -80,22 +87,45 @@ public class GameManager : MonoBehaviour {
   }
 
   public void QueueVisualizeX(float x) {
-    if (_currentValue.x != x) {
-      QueueMoveXY(x, _currentValue.y);
-      _currentValue.x = x;
+    if (x < 0 || x > Blocks.Size - 1) {
+      QueueOutputTextInfo($"x is converted to [0, {Blocks.Size - 1}]");
+    }
+    int value = Utils.Modulo((int)x, Blocks.Size);
+    if (_currentValue.x != value) {
+      QueueMoveXY(value, _currentValue.y);
+      _currentValue.x = value;
     }
   }
 
   public void QueueVisualizeY(float y) {
-    if (_currentValue.y != y) {
-      QueueMoveXY(_currentValue.x, y);
-      _currentValue.y = y;
+    if (y < 0 || y > Blocks.Size - 1) {
+      QueueOutputTextInfo($"y is converted to [0, {Blocks.Size - 1}]");
+    }
+    int value = Utils.Modulo((int)y, Blocks.Size);
+    if (_currentValue.y != value) {
+      QueueMoveXY(_currentValue.x, value);
+      _currentValue.y = value;
     }
   }
 
   public void QueueVisualizeZ(float z) {
-    QueueSetColor(_currentValue.x, _currentValue.y, z);
-    _currentValue.z = z;
+    if (z < 0 || z > Blocks.ColorNum - 1) {
+      QueueOutputTextInfo($"z is converted to [0, {Blocks.ColorNum - 1}]");
+    }
+    int value = Utils.Modulo((int)z, Blocks.ColorNum);
+    QueueSetColor(_currentValue.x, _currentValue.y, value);
+    _currentValue.z = value;
+  }
+
+  public void QueueVisualizeSize(float size) {
+    if (size < Blocks.MinSize || size > Blocks.MaxSize) {
+      QueueOutputTextInfo($"size is clamped to [{Blocks.MinSize}, {Blocks.MaxSize}]");
+    }
+    int newSize = Mathf.Clamp((int)size, Blocks.MinSize, Blocks.MaxSize);
+    if (_currentGroundSize != newSize) {
+      QueueResize(newSize);
+      _currentGroundSize = newSize;
+    }
   }
 
   public void QueueOutputTextInfo(string info) {
@@ -119,38 +149,49 @@ public class GameManager : MonoBehaviour {
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
-  private void Reset() {
-    TextConsole.text = "";
-    _currentValue = Vector3.zero;
-    Boy.Reset();
-    Blocks.Reset();
+  private void Reset(bool clearConsole) {
+    if (clearConsole) {
+      TextConsole.text = "";
+    }
+    _currentValue = Vector3Int.zero;
+    _currentGroundSize = Blocks.Size;
+    var pos = Blocks.GetBlockWorldPos(0, 0);
+    Boy.MoveToWorldPos(pos.x, pos.z);
+    Blocks.ResetColors();
   }
 
   private void QueueMoveXY(float x, float y) {
-    var task = new Task2<int, int>(BoyMoveToTask, (int)x % 10, (int)y % 10);
+    var task = new Task2<int, int>(BoyMoveToTask,
+                                   (int)x % Blocks.Size,
+                                   (int)y % Blocks.Size);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
   private void QueueSetColor(float x, float y, float z) {
     var taskBlocks = new Task3<int, int, int>(SetBlockColorTask,
-                                              (int)x % 10,
-                                              (int)y % 10,
-                                              (int)z % 10);
+                                              (int)x % Blocks.Size,
+                                              (int)y % Blocks.Size,
+                                              (int)z % Blocks.ColorNum);
     var taskBoy = new Task0(BoyJumpTask);
     _actionQueue.Enqueue(new Action(this, new ITask[] {taskBlocks, taskBoy}));
   }
 
+  private void QueueResize(int size) {
+    var task = new Task1<int>(ResizeTask, size);
+    _actionQueue.Enqueue(new SingleTaskAction(this, task));
+  }
+
   private IEnumerator BoyMoveToTask(int row, int col) {
     var worldPos = Blocks.GetBlockWorldPos(row, col);
-    yield return Boy.MoveToWorldPos(worldPos.x, worldPos.z);
+    yield return Boy.MoveToWorldPosCoroutine(worldPos.x, worldPos.z);
   }
 
   private IEnumerator BoyJumpTask() {
-    yield return Boy.Jump();
+    yield return Boy.JumpCoroutine();
   }
 
   private IEnumerator SetBlockColorTask(int row, int col, int colorIndex) {
-    yield return Blocks.SetBlockColor(row, col, colorIndex);
+    yield return Blocks.SetBlockColorCoroutine(row, col, colorIndex);
   }
 
   private IEnumerator OutputTextInfoTask(string info, bool append) {
@@ -203,5 +244,30 @@ public class GameManager : MonoBehaviour {
   private IEnumerator UpdateButtonsTask() {
     UpdateButtons();
     yield return null;
+  }
+
+  private IEnumerator ResizeTask(int size) {
+    Blocks.Resize(size);
+    yield return null;
+    Reset(false);
+    yield return null;
+
+    // Zooms out the camera to meet the new scale of the ground size. The main camera's angle will
+    // be kept as (45, -45, 0) in degrees, thus the yPos of the camera will be set to xPos *
+    // sqrt(2).
+    var currentCameraPos = Camera.transform.position;
+    float cameraX = _cameraMinX / Blocks.MinSize * Blocks.Size;
+    float cameraY = cameraX * Mathf.Sqrt(2f);
+    float cameraZ = -cameraX;
+    var targetCameraPos = new Vector3(cameraX, cameraY, cameraZ);
+
+    for (int i = 0; i < _cameraAnimSteps; i++) {
+      float t = (float)i / (float)_cameraAnimSteps;
+      float x = Mathf.SmoothStep(currentCameraPos.x, targetCameraPos.x, t);
+      float y = Mathf.SmoothStep(currentCameraPos.y, targetCameraPos.y, t);
+      float z = Mathf.SmoothStep(currentCameraPos.z, targetCameraPos.z, t);
+      Camera.transform.position = new Vector3(x, y, z);
+      yield return new WaitForSeconds(_animInterval);
+    }
   }
 }

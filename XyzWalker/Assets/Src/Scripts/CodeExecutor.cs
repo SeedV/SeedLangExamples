@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -49,8 +48,8 @@ public class CodeExecutor
   }
 
   private const string _defaultModuleName = "Program";
-  private const int _minSleepInMilliSeconds = 30;
-  private const float _singleStepWaitInSeconds = .5f;
+  private const int _minSleepInMilliSeconds = 10;
+  private const float _singleStepWaitInSeconds = .1f;
 
   private readonly GameManager _gameManager;
   private readonly ConsoleWriter _consoleWriter;
@@ -100,13 +99,15 @@ public class CodeExecutor
   }
 
   public void On(Event.Assignment e, IVM vm) {
-    // Monitors the assignment events for the variables "x", "y", "z".
+    // Monitors the assignment events for the variables "x", "y", "z", and "size".
     if (e.Name == "x") {
       _gameManager.QueueVisualizeX((float)e.Value.AsNumber());
     } else if (e.Name == "y") {
       _gameManager.QueueVisualizeY((float)e.Value.AsNumber());
     } else if (e.Name == "z") {
       _gameManager.QueueVisualizeZ((float)e.Value.AsNumber());
+    } else if (e.Name == "size") {
+      _gameManager.QueueVisualizeSize((float)e.Value.AsNumber());
     }
     WaitForActionQueueComplete();
   }
