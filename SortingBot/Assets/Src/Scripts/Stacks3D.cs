@@ -19,7 +19,7 @@ using UnityEngine;
 public class Stacks3D : MonoBehaviour {
   private const float _cubeIntervalY = 11f;
   private const int _markersPerStack = 3;
-  private const int _stackSwapSteps = 36;
+  private const int _stackSwapSteps = 20;
 
   private readonly List<GameObject> _stackBases = new List<GameObject>();
   private readonly List<Vector3> _stackBasePositions = new List<Vector3>();
@@ -88,8 +88,6 @@ public class Stacks3D : MonoBehaviour {
   public IEnumerator Swap(int stackIndex1, int stackIndex2) {
     Debug.Assert(stackIndex1 >= 0 && stackIndex1 < Config.StackCount);
     Debug.Assert(stackIndex2 >= 0 && stackIndex2 < Config.StackCount);
-    yield return FlashTwoStacks(stackIndex1, stackIndex2,
-                                StackState.BeingSwapped, StackState.Normal);
     yield return RotateTwoStacksAroundEachOther(stackIndex1, stackIndex2, StackState.BeingSwapped);
     SetStackState(stackIndex1, StackState.Normal);
     SetStackState(stackIndex2, StackState.Normal);
