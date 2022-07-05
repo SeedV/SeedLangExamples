@@ -86,6 +86,8 @@ public class CodeExecutor
     lock (_threadLock) {
       if (_thread is null) {
         _source = source;
+        _dataVariableName = "";
+        _currentVTags.Clear();
         Stopping = false;
         _thread = new Thread(ThreadEntry);
         _thread.Start();
@@ -157,7 +159,8 @@ public class CodeExecutor
   public void On(Event.VTagEntered e, IVM vm) {
     foreach (var tag in e.VTags) {
       string name = tag.Name.ToLower();
-      _currentVTags.Add(name, tag);
+      // For embedded VTags with the same name, only the last one matters.
+      _currentVTags[name] = tag;
     }
   }
 
@@ -165,7 +168,9 @@ public class CodeExecutor
     foreach (var tag in e.VTags) {
       // Handles the swap operation in the Exited event of the VTag.
       string name = tag.Name.ToLower();
-      _currentVTags.Remove(name);
+      if (_currentVTags.ContainsKey(name)) {
+        _currentVTags.Remove(name);
+      }
       if (name == _swapVTag && tag.Values[0].IsNumber && tag.Values[1].IsNumber) {
         int index1 = (int)(tag.Values[0].AsNumber());
         int index2 = (int)(tag.Values[1].AsNumber());
