@@ -89,13 +89,14 @@ public class GameManager : MonoBehaviour {
   }
 
   public void QueueOutputTextInfo(string info) {
-    var task = new Task2<string, bool>(OutputTextInfoTask, info, true);
+    var task = new Task2<string, bool>(Inspector.OutputTextInfoTask, info, true);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
   public void QueueOutputSeedLangDiagnostics(DiagnosticCollection collection) {
-    var task =
-        new Task2<DiagnosticCollection, bool>(OutputSeedLangDiagnosticsTask, collection, true);
+    var task = new Task2<DiagnosticCollection, bool>(Inspector.OutputSeedLangDiagnosticsTask,
+                                                     collection,
+                                                     true);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
@@ -176,24 +177,6 @@ public class GameManager : MonoBehaviour {
       options.Add(example.name);
     }
     ExamplesDropdown.AddOptions(options);
-  }
-
-  private IEnumerator OutputTextInfoTask(string info, bool append) {
-    if (append) {
-      Inspector.AppendTextInfo(info);
-    } else {
-      Inspector.OutputTextInfo(info);
-    }
-    yield return null;
-  }
-
-  private IEnumerator OutputSeedLangDiagnosticsTask(DiagnosticCollection collection, bool append) {
-    if (append) {
-      Inspector.AppendSeedLangDiagnostics(collection);
-    } else {
-      Inspector.OutputSeedLangDiagnostics(collection);
-    }
-    yield return null;
   }
 
   private IEnumerator HighlightCodeLineTask(int lineNo, float secondsToWait) {
