@@ -26,6 +26,7 @@ public class GameManager : MonoBehaviour {
   private const int _cameraAnimSteps = 20;
   private const float _animInterval = .03f;
   private const float _cameraMinX = 200f;
+  private const float _playSoundDelay = .8f;
   private readonly ActionQueue _actionQueue = new ActionQueue();
 
   public Camera Camera;
@@ -35,11 +36,13 @@ public class GameManager : MonoBehaviour {
   public TMP_Text TextConsole;
   public Boy Boy;
   public Blocks Blocks;
+  public AudioClip[] AudioClips;
 
   public bool IsActionQueueEmpty => _actionQueue.IsEmpty;
 
   private CodeExecutor _codeExecutor;
   private EditorManager _editor;
+  private AudioSource _audioSource;
 
   // The (x, y, z) value to be visualized.
   private Vector3Int _currentValue;
@@ -69,6 +72,8 @@ public class GameManager : MonoBehaviour {
     RunButton.onClick.AddListener(OnRun);
     StopButton.onClick.AddListener(OnStop);
     UpdateButtons();
+
+    _audioSource = GetComponent<AudioSource>();
 
     Reset(true);
 
@@ -112,9 +117,10 @@ public class GameManager : MonoBehaviour {
     if (z < 0 || z > Blocks.ColorNum - 1) {
       QueueOutputTextInfo($"z is converted to [0, {Blocks.ColorNum - 1}]");
     }
-    int value = Utils.Modulo((int)z, Blocks.ColorNum);
-    QueueSetColor(_currentValue.x, _currentValue.y, value);
-    _currentValue.z = value;
+    int colorIndex = Utils.Modulo((int)z, Blocks.ColorNum);
+    int soundIndex = Utils.Modulo((int)z, AudioClips.Length);
+    QueueSetColorAndPlaySound(_currentValue.x, _currentValue.y, colorIndex, soundIndex);
+    _currentValue.z = colorIndex;
   }
 
   public void QueueVisualizeSize(float size) {
@@ -160,20 +166,16 @@ public class GameManager : MonoBehaviour {
     Blocks.ResetColors();
   }
 
-  private void QueueMoveXY(float x, float y) {
-    var task = new Task2<int, int>(BoyMoveToTask,
-                                   (int)x % Blocks.Size,
-                                   (int)y % Blocks.Size);
+  private void QueueMoveXY(int x, int y) {
+    var task = new Task2<int, int>(BoyMoveToTask, x, y);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
-  private void QueueSetColor(float x, float y, float z) {
-    var taskBlocks = new Task3<int, int, int>(SetBlockColorTask,
-                                              (int)x % Blocks.Size,
-                                              (int)y % Blocks.Size,
-                                              (int)z % Blocks.ColorNum);
+  private void QueueSetColorAndPlaySound(int x, int y, int colorIndex, int soundIndex) {
+    var taskBlocks = new Task3<int, int, int>(SetBlockColorTask, x, y, colorIndex);
     var taskBoy = new Task0(BoyJumpTask);
-    _actionQueue.Enqueue(new Action(this, new ITask[] {taskBlocks, taskBoy}));
+    var taskSound = new Task1<int>(PlaySoundTask, soundIndex);
+    _actionQueue.Enqueue(new Action(this, new ITask[] {taskBlocks, taskBoy, taskSound}));
   }
 
   private void QueueResize(int size) {
@@ -192,6 +194,12 @@ public class GameManager : MonoBehaviour {
 
   private IEnumerator SetBlockColorTask(int row, int col, int colorIndex) {
     yield return Blocks.SetBlockColorCoroutine(row, col, colorIndex);
+  }
+
+  private IEnumerator PlaySoundTask(int soundIndex) {
+    yield return new WaitForSeconds(_playSoundDelay);
+    _audioSource.clip = AudioClips[soundIndex];
+    _audioSource.Play();
   }
 
   private IEnumerator OutputTextInfoTask(string info, bool append) {

@@ -100,14 +100,19 @@ public class CodeExecutor
 
   public void On(Event.Assignment e, IVM vm) {
     // Monitors the assignment events for the variables "x", "y", "z", and "size".
-    if (e.Name == "x") {
-      _gameManager.QueueVisualizeX((float)e.Value.AsNumber());
-    } else if (e.Name == "y") {
-      _gameManager.QueueVisualizeY((float)e.Value.AsNumber());
-    } else if (e.Name == "z") {
-      _gameManager.QueueVisualizeZ((float)e.Value.AsNumber());
-    } else if (e.Name == "size") {
-      _gameManager.QueueVisualizeSize((float)e.Value.AsNumber());
+    switch (e.Target.Variable.Name) {
+      case "x":
+        _gameManager.QueueVisualizeX((float)e.Value.Value.AsNumber());
+        break;
+      case "y":
+        _gameManager.QueueVisualizeY((float)e.Value.Value.AsNumber());
+        break;
+      case "z":
+        _gameManager.QueueVisualizeZ((float)e.Value.Value.AsNumber());
+        break;
+      case "size":
+        _gameManager.QueueVisualizeSize((float)e.Value.Value.AsNumber());
+        break;
     }
     WaitForActionQueueComplete();
   }
