@@ -19,7 +19,7 @@ using UnityEngine;
 public class Stacks3D : MonoBehaviour {
   private const float _cubeIntervalY = 11f;
   private const int _markersPerStack = 3;
-  private const int _stackSwapSteps = 20;
+  private const int _stackSwapSteps = 30;
 
   private readonly List<GameObject> _stackBases = new List<GameObject>();
   private readonly List<Vector3> _stackBasePositions = new List<Vector3>();
