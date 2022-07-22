@@ -111,17 +111,18 @@ public class GameManager : MonoBehaviour {
       int num = i < data.Count ? data[i] : 0;
       if (Stacks3D.GetStackCubeNum(i) > 0 || num > 0) {
         QueueRobotGotoStack(i);
-        var task3D = new Task2<int, int>(Stacks3D.Setup, i, num);
-        var task2D = new Task2<int, int>(Stacks2D.Setup, i, num);
-        _actionQueue.Enqueue(new Action(this, new ITask[] { task3D, task2D }));
       }
+      var task3D = new Task2<int, int>(Stacks3D.Setup, i, num);
+      var task2D = new Task2<int, int>(Stacks2D.Setup, i, num);
+      _actionQueue.Enqueue(new Action(this, new ITask[] { task3D, task2D }));
     }
     QueueRobotGoHome();
   }
 
   public void QueueCompare(int stackIndex1, int stackIndex2) {
     if (stackIndex1 >= 0 && stackIndex1 < Config.StackCount &&
-        stackIndex2 >= 0 && stackIndex2 < Config.StackCount) {
+        stackIndex2 >= 0 && stackIndex2 < Config.StackCount &&
+        stackIndex1 != stackIndex2) {
       var task3D = new Task2<int, int>(Stacks3D.Compare, stackIndex1, stackIndex2);
       var task2D = new Task2<int, int>(Stacks2D.Compare, stackIndex1, stackIndex2);
       _actionQueue.Enqueue(new Action(this, new ITask[] { task3D, task2D }));
@@ -130,12 +131,20 @@ public class GameManager : MonoBehaviour {
 
   public void QueueSwap(int stackIndex1, int stackIndex2) {
     if (stackIndex1 >= 0 && stackIndex1 < Config.StackCount &&
-        stackIndex2 >= 0 && stackIndex2 < Config.StackCount) {
+        stackIndex2 >= 0 && stackIndex2 < Config.StackCount &&
+        stackIndex1 != stackIndex2) {
       QueueRobotGotoCenterOfTwoStacks(stackIndex1, stackIndex2);
       var task3D = new Task2<int, int>(Stacks3D.Swap, stackIndex1, stackIndex2);
       var task2D = new Task2<int, int>(Stacks2D.Swap, stackIndex1, stackIndex2);
       _actionQueue.Enqueue(new Action(this, new ITask[] { task3D, task2D }));
       QueueRobotGoHome();
+    }
+  }
+
+  public void QueueShowIndexBall(int stackIndex, bool show) {
+    if (stackIndex >= 0 && stackIndex < Config.StackCount) {
+      var task3D = new Task2<int, bool>(Stacks3D.ShowIndexBall, stackIndex, show);
+      _actionQueue.Enqueue(new SingleTaskAction(this, task3D));
     }
   }
 

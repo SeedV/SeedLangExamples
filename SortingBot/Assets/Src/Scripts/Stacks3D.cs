@@ -24,10 +24,12 @@ public class Stacks3D : MonoBehaviour {
   private readonly List<GameObject> _stackBases = new List<GameObject>();
   private readonly List<Vector3> _stackBasePositions = new List<Vector3>();
   private readonly List<List<GameObject>> _stackCubes = new List<List<GameObject>>();
+  private readonly List<GameObject> _indexBalls = new List<GameObject>();
   private readonly List<GameObject> _inLineMarkers = new List<GameObject>();
   private readonly List<GameObject> _connectorMarkers = new List<GameObject>();
 
   private GameObject _cubeRef;
+  private GameObject _indexBallRef;
   private float _cubeInitialY;
 
   // Gets the current cube number of a stack.
@@ -49,6 +51,11 @@ public class Stacks3D : MonoBehaviour {
       }
       stackCubeList.Clear();
     }
+
+    for (int i = 0; i < _indexBalls.Count; i++) {
+      Object.Destroy(_indexBalls[i]);
+      _indexBalls[i] = null;
+    }
   }
 
   // Clears a stack with animations.
@@ -60,6 +67,7 @@ public class Stacks3D : MonoBehaviour {
       Object.Destroy(cube);
     }
     _stackCubes[stackIndex].Clear();
+    _indexBalls[stackIndex] = null;
   }
 
   // Fills a stack with the given number of cubes with animations.
@@ -76,6 +84,11 @@ public class Stacks3D : MonoBehaviour {
       cube.GetComponent<Renderer>().material.SetColor(Config.MainColorName, color);
       cube.SetActive(true);
     }
+    var indexBall = Object.Instantiate(_indexBallRef, _stackBases[stackIndex].transform);
+    indexBall.transform.localPosition =
+        new Vector3(0, _cubeInitialY + cubeCount * _cubeIntervalY, 0);
+    _indexBalls[stackIndex] = indexBall;
+    indexBall.SetActive(false);
   }
 
   public IEnumerator Compare(int stackIndex1, int stackIndex2) {
@@ -93,6 +106,18 @@ public class Stacks3D : MonoBehaviour {
     SetStackState(stackIndex2, StackState.Normal);
     Utils.SwapListItems(_stackBases, stackIndex1, stackIndex2);
     Utils.SwapListItems(_stackCubes, stackIndex1, stackIndex2);
+    Utils.SwapListItems(_indexBalls, stackIndex1, stackIndex2);
+  }
+
+  public IEnumerator ShowIndexBall(int stackIndex, bool show) {
+    Debug.Assert(stackIndex >= 0 && stackIndex < Config.StackCount);
+    // Shows or hides the specified index ball while hiding all other balls.
+    for (int i = 0; i < _indexBalls.Count; i++) {
+      if (!(_indexBalls[i] is null)) {
+        _indexBalls[i].SetActive(i == stackIndex ? show : false);
+      }
+    }
+    yield return null;
   }
 
   void Start() {
@@ -107,12 +132,17 @@ public class Stacks3D : MonoBehaviour {
       _stackBases.Add(stackBase);
       _stackBasePositions.Add(stackBase.transform.position);
       _stackCubes.Add(new List<GameObject>());
+      _indexBalls.Add(null);
     }
 
     _cubeRef = _stackBases[0].transform.Find("Cube")?.gameObject;
     Debug.Assert(!(_cubeRef is null));
     _cubeInitialY = _cubeRef.transform.localPosition.y;
     _cubeRef.SetActive(false);
+
+    _indexBallRef = _stackBases[0].transform.Find("Index")?.gameObject;
+    Debug.Assert(!(_indexBallRef is null));
+    _indexBallRef.SetActive(false);
   }
 
   private void SetupMarkers() {

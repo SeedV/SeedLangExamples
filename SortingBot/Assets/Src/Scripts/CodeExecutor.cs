@@ -58,6 +58,7 @@ public class CodeExecutor
   // Uses lower-case VTag names to support case-insensitive comparisons.
   private const string _dataVTag = "data";
   private const string _swapVTag = "swap";
+  private const string _indexVTag = "index";
 
   private readonly GameManager _gameManager;
   private readonly ConsoleWriter _consoleWriter;
@@ -74,6 +75,8 @@ public class CodeExecutor
   private Thread _thread;
   private string _source;
   private string _dataVariableName;
+  private string _indexVariableName;
+  private int _currentIndexVariableValue = -1;
 
   public CodeExecutor(GameManager gameManager) {
     _gameManager = gameManager;
@@ -87,6 +90,7 @@ public class CodeExecutor
       if (_thread is null) {
         _source = source;
         _dataVariableName = "";
+        _indexVariableName = "";
         _currentVTags.Clear();
         Stopping = false;
         _thread = new Thread(ThreadEntry);
@@ -136,6 +140,13 @@ public class CodeExecutor
       _gameManager.QueueOutputTextInfo($"Data to sort: {e.Target} = {e.Value}");
       _gameManager.QueueSetupStacks(intValueList);
       WaitForActionQueueComplete();
+    } else if (_currentVTags.ContainsKey(_indexVTag) && e.Value.Value.IsNumber) {
+      // Inside the index VTag, records the index variable name and shows the index ball.
+      _indexVariableName = e.Target.Variable.Name;
+      UpdateIndexVariableValue((int)e.Value.Value.AsNumber());
+    } else if (e.Target.Variable.Name == _indexVariableName && e.Value.Value.IsNumber) {
+      // Otherwise, if the index variable is assigned, shows th index ball accordingly.
+      UpdateIndexVariableValue((int)e.Value.Value.AsNumber());
     } else {
       _gameManager.QueueOutputTextInfo($"Assigning: {e.Target} = {e.Value}");
     }
@@ -180,6 +191,12 @@ public class CodeExecutor
     }
   }
 
+  private void UpdateIndexVariableValue(int indexVariableValue) {
+    _gameManager.QueueOutputTextInfo($"Index variable is set to {indexVariableValue}");
+    _gameManager.QueueShowIndexBall(indexVariableValue, true);
+    _currentIndexVariableValue = indexVariableValue;
+  }
+
   // This method is used to synchronize the executor thread and the main UI thread. For example, it
   // will be confusing if the main UI thread is still playing the swapping animation while the
   // executor thread has finished the program.
@@ -203,6 +220,7 @@ public class CodeExecutor
     } else if (!engine.Run(collection)) {
       _gameManager.QueueOutputSeedLangDiagnostics(collection);
     } else {
+      _gameManager.QueueShowIndexBall(_currentIndexVariableValue, false);
       _gameManager.QueueHighlightCodeLineAndWait(-1, 0);
       _gameManager.QueueOutputTextInfo("Done.");
     }
