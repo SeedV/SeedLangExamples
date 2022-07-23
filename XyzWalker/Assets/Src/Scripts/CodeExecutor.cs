@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using System.IO;
 using System.Text;
-using System.Threading;
 
 using SeedLang;
 using SeedLang.Common;
 using SeedLang.Visualization;
 
-// Executes python code with the SeedLang engine in a separate thread and queues animation actions
-// to Unity's main thread when needed.
+// Executes python code with the SeedLang engine by a coroutine and queues animation actions when
+// needed.
 public class CodeExecutor
     : IVisualizer<Event.SingleStep>,
       IVisualizer<Event.Assignment> {
@@ -47,55 +47,39 @@ public class CodeExecutor
     }
   }
 
+  public bool IsRunning => !_engine.IsStopped;
+
   private const string _defaultModuleName = "Program";
   private const int _minSleepInMilliSeconds = 10;
   private const float _singleStepWaitInSeconds = .1f;
 
   private readonly GameManager _gameManager;
   private readonly ConsoleWriter _consoleWriter;
-  private readonly object _threadLock = new object();
+  private readonly Engine _engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
 
-  // If the executor thread is running.
-  public bool IsRunning => !(_thread is null);
-
-  // A switch for the caller to stop the code execution when the thread is running. It's safe for
-  // another thread to flip this bool flag directly.
+  // A switch for the caller to stop the code execution when the coroutine is running.
   public bool Stopping = false;
-
-  private Thread _thread;
-  private string _source;
 
   public CodeExecutor(GameManager gameManager) {
     _gameManager = gameManager;
     _consoleWriter = new ConsoleWriter(gameManager);
+    _engine.RedirectStdout(_consoleWriter);
+    _engine.Register(this);
   }
 
   // Runs a SeedLang script. Returns false if the executor is already running.
   public bool Run(string source) {
-    bool ret = true;
-    lock (_threadLock) {
-      if (_thread is null) {
-        _source = source;
-        Stopping = false;
-        _thread = new Thread(ThreadEntry);
-        _thread.Start();
-      } else {
-        ret = false;
-      }
+    if (IsRunning) {
+      return false;
     }
-    return ret;
+    _gameManager.StartCoroutine(RunProgram(source));
+    return true;
   }
 
   public void On(Event.SingleStep e, IVM vm) {
-    // Checks the stopping flag in the SingleStep callback.
-    if (Stopping) {
-      vm.Stop();
-      Stopping = false;
-    } else {
-      // Highlights the current line.
-      _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
-      WaitForActionQueueComplete();
-    }
+    // Highlights the current line.
+    _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
+    vm.Pause();
   }
 
   public void On(Event.Assignment e, IVM vm) {
@@ -114,33 +98,31 @@ public class CodeExecutor
         _gameManager.QueueVisualizeSize((float)e.Value.Value.AsNumber());
         break;
     }
-    WaitForActionQueueComplete();
   }
 
-  // This method is used to synchronize the executor thread and the main UI thread.
-  //
-  // TODO: design and implement a better synchronizing solution between the UI and the executor.
-  private void WaitForActionQueueComplete() {
-    while (!_gameManager.IsActionQueueEmpty) {
-      Thread.Sleep(_minSleepInMilliSeconds);
-    }
-  }
-
-  // The main thread of the executor.
-  private void ThreadEntry() {
-    var engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
-    engine.RedirectStdout(_consoleWriter);
-    engine.Register(this);
+  // The coroutine to execute the source code.
+  private IEnumerator RunProgram(string source) {
     var collection = new DiagnosticCollection();
-    if (!engine.Compile(_source, _defaultModuleName, collection)) {
-      _gameManager.QueueOutputSeedLangDiagnostics(collection);
-    } else if (!engine.Run(collection)) {
-      _gameManager.QueueOutputSeedLangDiagnostics(collection);
+    if (_engine.Compile(source, _defaultModuleName, collection)) {
+      if (_engine.Run(collection)) {
+        yield return new UnityEngine.WaitUntil(() => _gameManager.IsActionQueueEmpty);
+        while (!Stopping && !_engine.IsStopped) {
+          if (_engine.Continue(collection)) {
+            yield return new UnityEngine.WaitUntil(() => _gameManager.IsActionQueueEmpty);
+          } else {
+            _gameManager.QueueOutputSeedLangDiagnostics(collection);
+          }
+        }
+        if (Stopping) {
+          _engine.Stop();
+          Stopping = false;
+        }
+        _gameManager.QueueHighlightCodeLineAndWait(-1, 0);
+        _gameManager.QueueOutputTextInfo("Done.");
+      }
     } else {
-      _gameManager.QueueHighlightCodeLineAndWait(-1, 0);
-      _gameManager.QueueOutputTextInfo("Done.");
+      _gameManager.QueueOutputSeedLangDiagnostics(collection);
     }
-    _thread = null;
     _gameManager.QueueOnExecutorComplete();
   }
 }
