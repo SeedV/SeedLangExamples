@@ -47,8 +47,6 @@ public class CodeExecutor
     }
   }
 
-  public bool IsRunning => !_engine.IsStopped;
-
   private const string _defaultModuleName = "Program";
   private const int _minSleepInMilliSeconds = 10;
   private const float _singleStepWaitInSeconds = .1f;
@@ -56,6 +54,9 @@ public class CodeExecutor
   private readonly GameManager _gameManager;
   private readonly ConsoleWriter _consoleWriter;
   private readonly Engine _engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
+
+  // If the execution is running. It's treated as running if the engine is running or paused.
+  public bool IsRunning => !_engine.IsStopped;
 
   // A switch for the caller to stop the code execution when the coroutine is running.
   public bool Stopping = false;
