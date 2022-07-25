@@ -89,13 +89,14 @@ public class GameManager : MonoBehaviour {
   }
 
   public void QueueOutputTextInfo(string info) {
-    var task = new Task2<string, bool>(OutputTextInfoTask, info, true);
+    var task = new Task2<string, bool>(Inspector.OutputTextInfoTask, info, true);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
   public void QueueOutputSeedLangDiagnostics(DiagnosticCollection collection) {
-    var task =
-        new Task2<DiagnosticCollection, bool>(OutputSeedLangDiagnosticsTask, collection, true);
+    var task = new Task2<DiagnosticCollection, bool>(Inspector.OutputSeedLangDiagnosticsTask,
+                                                     collection,
+                                                     true);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
@@ -110,17 +111,18 @@ public class GameManager : MonoBehaviour {
       int num = i < data.Count ? data[i] : 0;
       if (Stacks3D.GetStackCubeNum(i) > 0 || num > 0) {
         QueueRobotGotoStack(i);
-        var task3D = new Task2<int, int>(Stacks3D.Setup, i, num);
-        var task2D = new Task2<int, int>(Stacks2D.Setup, i, num);
-        _actionQueue.Enqueue(new Action(this, new ITask[] { task3D, task2D }));
       }
+      var task3D = new Task2<int, int>(Stacks3D.Setup, i, num);
+      var task2D = new Task2<int, int>(Stacks2D.Setup, i, num);
+      _actionQueue.Enqueue(new Action(this, new ITask[] { task3D, task2D }));
     }
     QueueRobotGoHome();
   }
 
   public void QueueCompare(int stackIndex1, int stackIndex2) {
     if (stackIndex1 >= 0 && stackIndex1 < Config.StackCount &&
-        stackIndex2 >= 0 && stackIndex2 < Config.StackCount) {
+        stackIndex2 >= 0 && stackIndex2 < Config.StackCount &&
+        stackIndex1 != stackIndex2) {
       var task3D = new Task2<int, int>(Stacks3D.Compare, stackIndex1, stackIndex2);
       var task2D = new Task2<int, int>(Stacks2D.Compare, stackIndex1, stackIndex2);
       _actionQueue.Enqueue(new Action(this, new ITask[] { task3D, task2D }));
@@ -129,12 +131,20 @@ public class GameManager : MonoBehaviour {
 
   public void QueueSwap(int stackIndex1, int stackIndex2) {
     if (stackIndex1 >= 0 && stackIndex1 < Config.StackCount &&
-        stackIndex2 >= 0 && stackIndex2 < Config.StackCount) {
+        stackIndex2 >= 0 && stackIndex2 < Config.StackCount &&
+        stackIndex1 != stackIndex2) {
       QueueRobotGotoCenterOfTwoStacks(stackIndex1, stackIndex2);
       var task3D = new Task2<int, int>(Stacks3D.Swap, stackIndex1, stackIndex2);
       var task2D = new Task2<int, int>(Stacks2D.Swap, stackIndex1, stackIndex2);
       _actionQueue.Enqueue(new Action(this, new ITask[] { task3D, task2D }));
       QueueRobotGoHome();
+    }
+  }
+
+  public void QueueShowIndexBall(int stackIndex, bool show) {
+    if (stackIndex >= 0 && stackIndex < Config.StackCount) {
+      var task3D = new Task2<int, bool>(Stacks3D.ShowIndexBall, stackIndex, show);
+      _actionQueue.Enqueue(new SingleTaskAction(this, task3D));
     }
   }
 
@@ -176,24 +186,6 @@ public class GameManager : MonoBehaviour {
       options.Add(example.name);
     }
     ExamplesDropdown.AddOptions(options);
-  }
-
-  private IEnumerator OutputTextInfoTask(string info, bool append) {
-    if (append) {
-      Inspector.AppendTextInfo(info);
-    } else {
-      Inspector.OutputTextInfo(info);
-    }
-    yield return null;
-  }
-
-  private IEnumerator OutputSeedLangDiagnosticsTask(DiagnosticCollection collection, bool append) {
-    if (append) {
-      Inspector.AppendSeedLangDiagnostics(collection);
-    } else {
-      Inspector.OutputSeedLangDiagnostics(collection);
-    }
-    yield return null;
   }
 
   private IEnumerator HighlightCodeLineTask(int lineNo, float secondsToWait) {

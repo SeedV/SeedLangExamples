@@ -58,6 +58,7 @@ public class CodeExecutor
   // Uses lower-case VTag names to support case-insensitive comparisons.
   private const string _dataVTag = "data";
   private const string _swapVTag = "swap";
+  private const string _indexVTag = "index";
 
   private readonly GameManager _gameManager;
   private readonly ConsoleWriter _consoleWriter;
@@ -74,6 +75,8 @@ public class CodeExecutor
   private Thread _thread;
   private string _source;
   private string _dataVariableName;
+  private string _indexVariableName;
+  private int _currentIndexVariableValue = -1;
 
   public CodeExecutor(GameManager gameManager) {
     _gameManager = gameManager;
@@ -86,6 +89,9 @@ public class CodeExecutor
     lock (_threadLock) {
       if (_thread is null) {
         _source = source;
+        _dataVariableName = "";
+        _indexVariableName = "";
+        _currentVTags.Clear();
         Stopping = false;
         _thread = new Thread(ThreadEntry);
         _thread.Start();
@@ -134,6 +140,13 @@ public class CodeExecutor
       _gameManager.QueueOutputTextInfo($"Data to sort: {e.Target} = {e.Value}");
       _gameManager.QueueSetupStacks(intValueList);
       WaitForActionQueueComplete();
+    } else if (_currentVTags.ContainsKey(_indexVTag) && e.Value.Value.IsNumber) {
+      // Inside the index VTag, records the index variable name and shows the index ball.
+      _indexVariableName = e.Target.Variable.Name;
+      UpdateIndexVariableValue((int)e.Value.Value.AsNumber());
+    } else if (e.Target.Variable.Name == _indexVariableName && e.Value.Value.IsNumber) {
+      // Otherwise, if the index variable is assigned, shows th index ball accordingly.
+      UpdateIndexVariableValue((int)e.Value.Value.AsNumber());
     } else {
       _gameManager.QueueOutputTextInfo($"Assigning: {e.Target} = {e.Value}");
     }
@@ -157,7 +170,8 @@ public class CodeExecutor
   public void On(Event.VTagEntered e, IVM vm) {
     foreach (var tag in e.VTags) {
       string name = tag.Name.ToLower();
-      _currentVTags.Add(name, tag);
+      // For embedded VTags with the same name, only the last one matters.
+      _currentVTags[name] = tag;
     }
   }
 
@@ -165,7 +179,9 @@ public class CodeExecutor
     foreach (var tag in e.VTags) {
       // Handles the swap operation in the Exited event of the VTag.
       string name = tag.Name.ToLower();
-      _currentVTags.Remove(name);
+      if (_currentVTags.ContainsKey(name)) {
+        _currentVTags.Remove(name);
+      }
       if (name == _swapVTag && tag.Values[0].IsNumber && tag.Values[1].IsNumber) {
         int index1 = (int)(tag.Values[0].AsNumber());
         int index2 = (int)(tag.Values[1].AsNumber());
@@ -173,6 +189,12 @@ public class CodeExecutor
         WaitForActionQueueComplete();
       }
     }
+  }
+
+  private void UpdateIndexVariableValue(int indexVariableValue) {
+    _gameManager.QueueOutputTextInfo($"Index variable is set to {indexVariableValue}");
+    _gameManager.QueueShowIndexBall(indexVariableValue, true);
+    _currentIndexVariableValue = indexVariableValue;
   }
 
   // This method is used to synchronize the executor thread and the main UI thread. For example, it
@@ -198,6 +220,7 @@ public class CodeExecutor
     } else if (!engine.Run(collection)) {
       _gameManager.QueueOutputSeedLangDiagnostics(collection);
     } else {
+      _gameManager.QueueShowIndexBall(_currentIndexVariableValue, false);
       _gameManager.QueueHighlightCodeLineAndWait(-1, 0);
       _gameManager.QueueOutputTextInfo("Done.");
     }

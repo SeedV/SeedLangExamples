@@ -19,7 +19,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class Stacks2D : MonoBehaviour {
-  private static readonly Color _emptyColor = new Color32(0xf0, 0xf0, 0xf0, 0xff);
+  private static readonly Color _emptyColor = new Color32(0xff, 0xff, 0xff, 0xff);
 
   private List<List<GameObject>> _stackCubes = new List<List<GameObject>>();
   private List<int> _stackCubeNums = new List<int>();

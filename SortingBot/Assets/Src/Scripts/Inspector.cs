@@ -12,17 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 using SeedLang.Common;
 
 public class Inspector : MonoBehaviour {
+  public ScrollRect ScrollView;
   public TMP_Text TextConsole;
 
   public void Clear() {
     TextConsole.text = "";
+  }
+
+  public IEnumerator OutputTextInfoTask(string info, bool append) {
+    if (append) {
+      AppendTextInfo(info);
+    } else {
+      OutputTextInfo(info);
+    }
+    yield return null;
+    ScrollToBottom();
+  }
+
+  public IEnumerator OutputSeedLangDiagnosticsTask(DiagnosticCollection collection, bool append) {
+    if (append) {
+      AppendSeedLangDiagnostics(collection);
+    } else {
+      OutputSeedLangDiagnostics(collection);
+    }
+    yield return null;
+    ScrollToBottom();
   }
 
   public void OutputTextInfo(string info) {
@@ -34,6 +57,14 @@ public class Inspector : MonoBehaviour {
       TextConsole.text += "\n";
     }
     TextConsole.text += info;
+  }
+
+  public void ScrollToTop() {
+    ScrollView.verticalNormalizedPosition = 1;
+  }
+
+  public void ScrollToBottom() {
+    ScrollView.verticalNormalizedPosition = 0;
   }
 
   public void OutputSeedLangDiagnostics(DiagnosticCollection collection) {

@@ -30,7 +30,7 @@ public static class Config {
   // Common animation settings shared by 3D and 2D stacks.
   public const float StackCubeAlpha = 0.7f;
   public const float StackCubeSetupInterval = .05f;
-  public const float StackCubeFlashInterval = .2f;
+  public const float StackCubeFlashInterval = .1f;
   public const float StackCubeFlashTimes = 3;
 
   // Color definition for every stack state.
