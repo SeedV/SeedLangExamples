@@ -3,6 +3,24 @@
 Example applications that demonstrate SeedLang's in-game scripting and
 visualization features.
 
+## AppleCalc
+
+A simple project that shows the way how to embed SeedLang into a .Net console
+application.
+
+Here is an example run:
+
+```shell
+dotnet run --project AppleCalc
+] 3+4*(5-3)-4
+STEP 1: 🍎🍎🍎🍎🍎 - 🍎🍎🍎 = 🍎🍎
+STEP 2: 🍎🍎🍎🍎 * 🍎🍎 = 🍎🍎🍎🍎🍎🍎🍎🍎
+STEP 3: 🍎🍎🍎 + 🍎🍎🍎🍎🍎🍎🍎🍎 = 🍎🍎🍎🍎🍎🍎🍎🍎🍎🍎🍎
+STEP 4: 🍎🍎🍎🍎🍎🍎🍎🍎🍎🍎🍎 - 🍎🍎🍎🍎 = 🍎🍎🍎🍎🍎🍎🍎
+Result: 🍎🍎🍎🍎🍎🍎🍎
+] bye
+```
+
 ## SeedLangUnityCommon
 
 Common libraries for integrating SeedLang with Unity games or applications:
