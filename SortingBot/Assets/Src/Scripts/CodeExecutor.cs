@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Threading;
 
 using SeedLang;
 using SeedLang.Common;
 using SeedLang.Visualization;
 
-// Executes a sorting code with the SeedLang engine in a separate thread and queues animation
-// actions to Unity's main thread when needed.
+// Executes a sorting code with the SeedLang engine by a coroutine and queues animation actions when
+// needed.
 public class CodeExecutor
     : IVisualizer<Event.SingleStep>,
       IVisualizer<Event.Assignment>,
@@ -62,17 +62,15 @@ public class CodeExecutor
 
   private readonly GameManager _gameManager;
   private readonly ConsoleWriter _consoleWriter;
+  private readonly Engine _engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
   private readonly Dictionary<string, VTagInfo> _currentVTags = new Dictionary<string, VTagInfo>();
-  private readonly object _threadLock = new object();
 
-  // If the executor thread is running.
-  public bool IsRunning => !(_thread is null);
+  // If the execution is running. It's treated as running if the engine is running or paused.
+  public bool IsRunning => !_engine.IsStopped;
 
-  // A switch for the caller to stop the code execution when the thread is running. It's safe for
-  // another thread to flip this bool flag directly.
+  // A switch for the caller to stop the code execution when the coroutine is running.
   public bool Stopping = false;
 
-  private Thread _thread;
   private string _source;
   private string _dataVariableName;
   private string _indexVariableName;
@@ -81,43 +79,29 @@ public class CodeExecutor
   public CodeExecutor(GameManager gameManager) {
     _gameManager = gameManager;
     _consoleWriter = new ConsoleWriter(gameManager);
+    _engine.RedirectStdout(_consoleWriter);
+    _engine.Register(this);
   }
 
   // Runs a SeedLang script. Returns false if the executor is already running.
   public bool Run(string source) {
-    bool ret = true;
-    lock (_threadLock) {
-      if (_thread is null) {
-        _source = source;
-        _dataVariableName = "";
-        _indexVariableName = "";
-        _currentVTags.Clear();
-        Stopping = false;
-        _thread = new Thread(ThreadEntry);
-        _thread.Start();
-      } else {
-        ret = false;
-      }
+    if (IsRunning) {
+      return false;
     }
-    return ret;
+    _gameManager.StartCoroutine(RunProgram(source));
+    return true;
   }
 
   public void On(Event.SingleStep e, IVM vm) {
-    // Only checks the stopping flag in the SingleStep callback.
-    if (Stopping) {
-      vm.Stop();
-      Stopping = false;
-    } else {
-      // Highlights the current line.
-      _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
-      WaitForActionQueueComplete();
-    }
+    // Highlights the current line.
+    _gameManager.QueueHighlightCodeLineAndWait(e.Range.Start.Line, _singleStepWaitInSeconds);
+    vm.Pause();
   }
 
   public void On(Event.Assignment e, IVM vm) {
-    if (_currentVTags.ContainsKey(_dataVTag) && e.Value.IsTemporary && e.Value.Value.IsList) {
+    if (_currentVTags.ContainsKey(_dataVTag) && e.RValue.IsTemporary && e.RValue.Value.IsList) {
       // Inside the data VTag, checks if the data list meets the requirements.
-      if (e.Value.Value.Length > Config.StackCount) {
+      if (e.RValue.Value.Length > Config.StackCount) {
         // TODO: makes all string messages localizable.
         _gameManager.QueueOutputTextInfo(
             $"The length of {e.Target.Variable.Name} exceeds the limit 0-{Config.StackCount}.");
@@ -126,8 +110,8 @@ public class CodeExecutor
       }
       _dataVariableName = e.Target.Variable.Name;
       var intValueList = new List<int>();
-      for (int i = 0; i < e.Value.Value.Length; i++) {
-        int intValue = (int)(e.Value.Value[new Value(i)].AsNumber());
+      for (int i = 0; i < e.RValue.Value.Length; i++) {
+        int intValue = (int)(e.RValue.Value[new Value(i)].AsNumber());
         if (intValue < 0 || intValue > Config.MaxCubesPerStack) {
           _gameManager.QueueOutputTextInfo(
               $"The value {e.Target.Variable.Name}[{i}] exceeds " +
@@ -137,18 +121,17 @@ public class CodeExecutor
         }
         intValueList.Add(intValue);
       }
-      _gameManager.QueueOutputTextInfo($"Data to sort: {e.Target} = {e.Value}");
+      _gameManager.QueueOutputTextInfo($"Data to sort: {e.Target} = {e.RValue}");
       _gameManager.QueueSetupStacks(intValueList);
-      WaitForActionQueueComplete();
-    } else if (_currentVTags.ContainsKey(_indexVTag) && e.Value.Value.IsNumber) {
+    } else if (_currentVTags.ContainsKey(_indexVTag) && e.RValue.Value.IsNumber) {
       // Inside the index VTag, records the index variable name and shows the index ball.
       _indexVariableName = e.Target.Variable.Name;
-      UpdateIndexVariableValue((int)e.Value.Value.AsNumber());
-    } else if (e.Target.Variable.Name == _indexVariableName && e.Value.Value.IsNumber) {
+      UpdateIndexVariableValue((int)e.RValue.Value.AsNumber());
+    } else if (e.Target.Variable.Name == _indexVariableName && e.RValue.Value.IsNumber) {
       // Otherwise, if the index variable is assigned, shows th index ball accordingly.
-      UpdateIndexVariableValue((int)e.Value.Value.AsNumber());
+      UpdateIndexVariableValue((int)e.RValue.Value.AsNumber());
     } else {
-      _gameManager.QueueOutputTextInfo($"Assigning: {e.Target} = {e.Value}");
+      _gameManager.QueueOutputTextInfo($"Assigning: {e.Target} = {e.RValue}");
     }
   }
 
@@ -163,7 +146,6 @@ public class CodeExecutor
       int index1 = (int)(e.Left.Keys[0].AsNumber());
       int index2 = (int)(e.Right.Keys[0].AsNumber());
       _gameManager.QueueCompare(index1, index2);
-      WaitForActionQueueComplete();
     }
   }
 
@@ -186,7 +168,6 @@ public class CodeExecutor
         int index1 = (int)(tag.Values[0].AsNumber());
         int index2 = (int)(tag.Values[1].AsNumber());
         _gameManager.QueueSwap(index1, index2);
-        WaitForActionQueueComplete();
       }
     }
   }
@@ -197,35 +178,30 @@ public class CodeExecutor
     _currentIndexVariableValue = indexVariableValue;
   }
 
-  // This method is used to synchronize the executor thread and the main UI thread. For example, it
-  // will be confusing if the main UI thread is still playing the swapping animation while the
-  // executor thread has finished the program.
-  //
-  // TODO: design and implement a better synchronizing solution between the UI and the executor.
-  private void WaitForActionQueueComplete() {
-    while (!_gameManager.IsActionQueueEmpty) {
-      Thread.Sleep(_minSleepInMilliSeconds);
-    }
-  }
-
-  // The main thread of the executor.
-  private void ThreadEntry() {
-    _gameManager.QueueOutputTextInfo("");
-    var engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
-    engine.RedirectStdout(_consoleWriter);
-    engine.Register(this);
+  // The coroutine to execute the source code.
+  private IEnumerator RunProgram(string source) {
     var collection = new DiagnosticCollection();
-    if (!engine.Compile(_source, _defaultModuleName, collection)) {
-      _gameManager.QueueOutputSeedLangDiagnostics(collection);
-    } else if (!engine.Run(collection)) {
-      _gameManager.QueueOutputSeedLangDiagnostics(collection);
+    if (_engine.Compile(source, _defaultModuleName, collection)) {
+      if (_engine.Run(collection)) {
+        yield return new UnityEngine.WaitUntil(() => _gameManager.IsActionQueueEmpty);
+        while (!Stopping && !_engine.IsStopped) {
+          if (_engine.Continue(collection)) {
+            yield return new UnityEngine.WaitUntil(() => _gameManager.IsActionQueueEmpty);
+          } else {
+            _gameManager.QueueOutputSeedLangDiagnostics(collection);
+          }
+        }
+        if (Stopping) {
+          _engine.Stop();
+          Stopping = false;
+        }
+        _gameManager.QueueShowIndexBall(_currentIndexVariableValue, false);
+        _gameManager.QueueHighlightCodeLineAndWait(-1, 0);
+        _gameManager.QueueOutputTextInfo("Done.");
+      }
     } else {
-      _gameManager.QueueShowIndexBall(_currentIndexVariableValue, false);
-      _gameManager.QueueHighlightCodeLineAndWait(-1, 0);
-      _gameManager.QueueOutputTextInfo("Done.");
+      _gameManager.QueueOutputSeedLangDiagnostics(collection);
     }
-    _thread = null;
     _gameManager.QueueOnExecutorComplete();
   }
-
 }

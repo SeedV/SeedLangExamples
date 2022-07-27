@@ -87,16 +87,16 @@ public class CodeExecutor
     // Monitors the assignment events for the variables "x", "y", "z", and "size".
     switch (e.Target.Variable.Name) {
       case "x":
-        _gameManager.QueueVisualizeX((float)e.Value.Value.AsNumber());
+        _gameManager.QueueVisualizeX((float)e.RValue.Value.AsNumber());
         break;
       case "y":
-        _gameManager.QueueVisualizeY((float)e.Value.Value.AsNumber());
+        _gameManager.QueueVisualizeY((float)e.RValue.Value.AsNumber());
         break;
       case "z":
-        _gameManager.QueueVisualizeZ((float)e.Value.Value.AsNumber());
+        _gameManager.QueueVisualizeZ((float)e.RValue.Value.AsNumber());
         break;
       case "size":
-        _gameManager.QueueVisualizeSize((float)e.Value.Value.AsNumber());
+        _gameManager.QueueVisualizeSize((float)e.RValue.Value.AsNumber());
         break;
     }
   }
