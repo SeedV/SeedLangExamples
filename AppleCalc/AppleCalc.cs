@@ -12,40 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using System.Text;
 
+using SeedLang;
 using SeedLang.Common;
 using SeedLang.Runtime;
+using SeedLang.Visualization;
 
-class AppleCalc {
-  private class Visualizer :
-      IVisualizer<UnaryEvent>, IVisualizer<BinaryEvent>, IVisualizer<EvalEvent> {
+public class AppleCalc {
+  private class Visualizer : IVisualizer<Event.Binary> {
     private int _step = 0;
 
-    public void On(UnaryEvent e) {
-      _step++;
-      string operand = NumberInApples(e.Value.Number);
-      string op = _unaryOperatorToString[e.Op];
-      string result = NumberInApples(e.Result.Number);
-      Console.WriteLine(
-          $"STEP {_step}: {op} {operand} = {result}");
+    public void Reset() {
+      _step = 0;
     }
 
-    public void On(BinaryEvent e) {
+    public void On(Event.Binary e, IVM vm) {
       _step++;
-      string operand1 = NumberInApples(e.Left.Number);
-      string operand2 = NumberInApples(e.Right.Number);
+      string operand1 = NumberInApples(e.Left.Value.AsNumber());
+      string operand2 = NumberInApples(e.Right.Value.AsNumber());
       string op = _binaryOperatorToString[e.Op];
-      string result = NumberInApples(e.Result.Number);
-      Console.WriteLine(
-          $"STEP {_step}: {operand1} {op} {operand2} = {result}");
-    }
-
-    public void On(EvalEvent e) {
-      string result = NumberInApples(e.Value.Number);
-      Console.WriteLine($"Result: {result}");
+      string result = NumberInApples(e.Result.AsNumber());
+      Console.WriteLine($"STEP {_step}: {operand1} {op} {operand2} = {result}");
     }
   }
 
@@ -58,9 +46,6 @@ Enter ""bye"" to exit.";
 
   private const string _prompt = "] ";
   private const string _bye = "bye";
-  private const string _errorDivByZero = "ERROR: division by zero.";
-  private const string _errorOverflow = "ERROR: overflow.";
-  private const string _errorSyntax = "ERROR: syntax error.";
 
   private static readonly Dictionary<BinaryOperator, string> _binaryOperatorToString =
       new Dictionary<BinaryOperator, string> {
@@ -80,33 +65,25 @@ Enter ""bye"" to exit.";
     Console.WriteLine(_welcome);
     Console.Write(_prompt);
     string? line;
+    var engine = new Engine(SeedXLanguage.SeedCalc, RunMode.Script);
+    var visualizer = new Visualizer();
+    engine.Register(visualizer);
     while ((line = Console.ReadLine()) != null) {
+      if (line.Length <= 0) {
+        continue;
+      }
       string input = line.ToLower();
       if (input == _bye) {
         break;
       }
-      if (input.Length > 0) {
-        var executor = new Executor();
-        var visualizer = new Visualizer();
-        executor.Register(visualizer);
-        var collection = new DiagnosticCollection();
-        if (!executor.Run(input, _moduleName, SeedXLanguage.SeedCalc, RunType.Ast, collection)) {
-          switch (collection.Diagnostics[0].MessageId) {
-            case Message.RuntimeErrorDivideByZero:
-              Console.WriteLine(_errorDivByZero);
-              break;
-            case Message.RuntimeErrorOverflow:
-              Console.WriteLine(_errorOverflow);
-              break;
-            default:
-              Console.WriteLine(_errorSyntax);
-              break;
-          }
-        }
-        executor.Unregister(visualizer);
+      var collection = new DiagnosticCollection();
+      if (!engine.Compile(input, _moduleName, collection) ||
+          !engine.Run(collection)) {
+        Console.WriteLine(collection.Diagnostics[0]?.ToString());
       }
       Console.Write(_prompt);
     }
+    engine.Unregister(visualizer);
   }
 
   private static string GetApple() {
