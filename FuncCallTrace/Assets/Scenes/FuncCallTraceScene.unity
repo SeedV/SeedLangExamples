@@ -509,7 +509,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1392040078}
   m_HandleRect: {fileID: 1392040077}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -2331,7 +2331,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_AdditionalShaderChannelsFlag: 25
+  m_AdditionalShaderChannelsFlag: 1
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0

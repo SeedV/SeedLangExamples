@@ -35,8 +35,8 @@ public class GameManager : MonoBehaviour {
   private const float _labelOffsetY = 0.4f;
   private const float _playSoundDelay = 0.1f;
   private const float _deltaLengthPerStep = 0.1f;
-  private const float _startLineWidth = .1f;
-  private const float _endLineWidth = .15f;
+  private const float _startLineWidth = .2f;
+  private const float _endLineWidth = .1f;
   private readonly ActionQueue _actionQueue = new ActionQueue();
   private readonly List<GameObject> _graphElements = new List<GameObject>();
 
@@ -102,8 +102,9 @@ public class GameManager : MonoBehaviour {
 
   public void OnRun() {
     Reset();
-    _codeExecutor.Run(_editor.Text);
-    UpdateButtons();
+    if (_codeExecutor.Run(_editor.Text)) {
+      UpdateButtons();
+    }
   }
 
   public void OnStop() {
@@ -111,6 +112,28 @@ public class GameManager : MonoBehaviour {
   }
 
   public void OnLoadExample() {
+    _editor.Text = ExampleCode.Code;
+  }
+
+  public void QueueProgramStarted(string label) {
+    var task = new Task2<LineDirection, string>(DrawLine, LineDirection.Down, label);
+    _actionQueue.Enqueue(new SingleTaskAction(this, task));
+  }
+
+  public void QueueFuncCalled(string label) {
+    var task = new Task2<LineDirection, string>(DrawLine, LineDirection.Right, label);
+    _actionQueue.Enqueue(new SingleTaskAction(this, task));
+
+    task = new Task2<LineDirection, string>(DrawLine, LineDirection.Down, null);
+    _actionQueue.Enqueue(new SingleTaskAction(this, task));
+  }
+
+  public void QueueFuncReturned(string label) {
+    var task = new Task2<LineDirection, string>(DrawLine, LineDirection.Left, label);
+    _actionQueue.Enqueue(new SingleTaskAction(this, task));
+
+    task = new Task2<LineDirection, string>(DrawLine, LineDirection.Down, null);
+    _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
   public void QueueOutputTextInfo(string info) {
@@ -144,33 +167,6 @@ public class GameManager : MonoBehaviour {
 
     _currentStep = 0;
     _currentCallDepth = 0;
-
-    var task = new Task2<LineDirection, string>(DrawLine, LineDirection.Down, "Start");
-    _actionQueue.Enqueue(new SingleTaskAction(this, task));
-
-    task = new Task2<LineDirection, string>(DrawLine, LineDirection.Right, "Foo (1)");
-    _actionQueue.Enqueue(new SingleTaskAction(this, task));
-
-    task = new Task2<LineDirection, string>(DrawLine, LineDirection.Down, null);
-    _actionQueue.Enqueue(new SingleTaskAction(this, task));
-
-    task = new Task2<LineDirection, string>(DrawLine, LineDirection.Right, "Foo (2)");
-    _actionQueue.Enqueue(new SingleTaskAction(this, task));
-
-    task = new Task2<LineDirection, string>(DrawLine, LineDirection.Down, null);
-    _actionQueue.Enqueue(new SingleTaskAction(this, task));
-
-    task = new Task2<LineDirection, string>(DrawLine, LineDirection.Left, "Return (3)");
-    _actionQueue.Enqueue(new SingleTaskAction(this, task));
-
-    task = new Task2<LineDirection, string>(DrawLine, LineDirection.Down, null);
-    _actionQueue.Enqueue(new SingleTaskAction(this, task));
-
-    task = new Task2<LineDirection, string>(DrawLine, LineDirection.Left, "Return (4)");
-    _actionQueue.Enqueue(new SingleTaskAction(this, task));
-
-    task = new Task2<LineDirection, string>(DrawLine, LineDirection.Down, null);
-    _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
   private void DrawLabel(string labelText, float x0, float x1) {

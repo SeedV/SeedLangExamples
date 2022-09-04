@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -54,6 +55,10 @@ public class CodeExecutor
   private readonly GameManager _gameManager;
   private readonly ConsoleWriter _consoleWriter;
   private readonly Engine _engine = new Engine(SeedXLanguage.SeedPython, RunMode.Script);
+  private readonly HashSet<string> _excludeFuncNames = new HashSet<string> () {
+    // TODO: Ignore all built-in function calls
+    "print"
+  };
 
   // If the execution is running. It's treated as running if the engine is running or paused.
   public bool IsRunning => !_engine.IsStopped;
@@ -70,7 +75,7 @@ public class CodeExecutor
 
   // Runs a SeedLang script. Returns false if the executor is already running.
   public bool Run(string source) {
-    if (IsRunning) {
+    if (IsRunning || string.IsNullOrEmpty(source)) {
       return false;
     }
     _gameManager.StartCoroutine(RunProgram(source));
@@ -84,13 +89,28 @@ public class CodeExecutor
   }
 
   public void On(Event.FuncCalled e, IVM vm) {
+    if (_excludeFuncNames.Contains(e.Name)) {
+      return;
+    }
+    var args = new List<string>();
+    foreach (var arg in e.Args) {
+      args.Add(arg.ToString());
+    }
+    string label = $"{e.Name}({string.Join(',', args)})";
+    _gameManager.QueueFuncCalled(label);
   }
 
   public void On(Event.FuncReturned e, IVM vm) {
+    if (_excludeFuncNames.Contains(e.Name)) {
+      return;
+    }
+    string label = $"return: {e.Result}";
+    _gameManager.QueueFuncReturned(label);
   }
 
   // The coroutine to execute the source code.
   private IEnumerator RunProgram(string source) {
+    _gameManager.QueueProgramStarted("Start");
     var collection = new DiagnosticCollection();
     if (_engine.Compile(source, _defaultModuleName, collection)) {
       if (_engine.Run(collection)) {
