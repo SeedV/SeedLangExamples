@@ -21,6 +21,11 @@ Result: 🍎🍎🍎🍎🍎🍎🍎
 ] bye
 ```
 
+## FuncCallTrace
+
+A visualizer that traces the function call history of a script program then
+draws the function call graph with Unity animations.
+
 ## SeedLangUnityCommon
 
 Common libraries for integrating SeedLang with Unity games or applications:
