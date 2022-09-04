@@ -1281,7 +1281,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: Sample text
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: b30469083ffc0435884cba598636c555, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -1306,8 +1306,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 18
+  m_fontSizeBase: 18
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1348,7 +1348,7 @@ MonoBehaviour:
   _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_renderer: {fileID: 1499629260}
   m_maskType: 0
 --- !u!23 &1499629260
@@ -1494,7 +1494,7 @@ MonoBehaviour:
     m_NormalColor: {r: 0, g: 0.6, b: 1, a: 1}
     m_HighlightedColor: {r: 0, g: 0.6666667, b: 1, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0, g: 0.6, b: 1, a: 1}
     m_DisabledColor: {r: 0.6, g: 0.6, b: 0.6, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -1700,7 +1700,7 @@ MonoBehaviour:
     m_NormalColor: {r: 0, g: 0.6, b: 1, a: 1}
     m_HighlightedColor: {r: 0, g: 0.6666667, b: 1, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0, g: 0.6, b: 1, a: 1}
     m_DisabledColor: {r: 0.6, g: 0.6, b: 0.6, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -2331,7 +2331,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_AdditionalShaderChannelsFlag: 1
+  m_AdditionalShaderChannelsFlag: 25
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
@@ -2649,7 +2649,7 @@ MonoBehaviour:
     m_NormalColor: {r: 0, g: 0.6, b: 1, a: 1}
     m_HighlightedColor: {r: 0, g: 0.6666667, b: 1, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0, g: 0.6, b: 1, a: 1}
     m_DisabledColor: {r: 0.6, g: 0.6, b: 0.6, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1

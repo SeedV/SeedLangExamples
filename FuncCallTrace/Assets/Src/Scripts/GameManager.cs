@@ -35,8 +35,10 @@ public class GameManager : MonoBehaviour {
   private const float _labelOffsetY = 0.4f;
   private const float _playSoundDelay = 0.1f;
   private const float _deltaLengthPerStep = 0.1f;
-  private const float _startLineWidth = .2f;
-  private const float _endLineWidth = .1f;
+  private const float _startLineWidth = .08f;
+  private const float _endLineWidth = .08f;
+  private const float _cameraViewExpandRatio = 1.3f;
+  private const int _cameraMoveSteps = 10;
   private readonly ActionQueue _actionQueue = new ActionQueue();
   private readonly List<GameObject> _graphElements = new List<GameObject>();
 
@@ -57,7 +59,7 @@ public class GameManager : MonoBehaviour {
 
   private int _currentStep;
   private int _currentCallDepth;
-  private float _initCameraZ;
+  private int _maxCallDepth;
 
   public void Start() {
     _codeExecutor = new CodeExecutor(this);
@@ -87,8 +89,6 @@ public class GameManager : MonoBehaviour {
     Debug.Assert(!(_labelRef is null));
     _labelRef.SetActive(false);
 
-    _initCameraZ = Camera.transform.position.z;
-
     RunButton.onClick.AddListener(OnRun);
     StopButton.onClick.AddListener(OnStop);
     ExampleButton.onClick.AddListener(OnLoadExample);
@@ -115,8 +115,8 @@ public class GameManager : MonoBehaviour {
     _editor.Text = ExampleCode.Code;
   }
 
-  public void QueueProgramStarted(string label) {
-    var task = new Task2<LineDirection, string>(DrawLine, LineDirection.Down, label);
+  public void QueueProgramStarted() {
+    var task = new Task2<LineDirection, string>(DrawLine, LineDirection.Down, null);
     _actionQueue.Enqueue(new SingleTaskAction(this, task));
   }
 
@@ -167,6 +167,7 @@ public class GameManager : MonoBehaviour {
 
     _currentStep = 0;
     _currentCallDepth = 0;
+    _maxCallDepth = 0;
   }
 
   private void DrawLabel(string labelText, float x0, float x1) {
@@ -180,6 +181,8 @@ public class GameManager : MonoBehaviour {
   }
 
   private IEnumerator DrawLine(LineDirection direction, string labelText) {
+    yield return AutoPositionCamera(direction);
+
     var points = CalcLinePosition(direction);
     var line = Object.Instantiate(_lineRef, TraceGraph.transform);
     line.SetActive(true);
@@ -188,12 +191,9 @@ public class GameManager : MonoBehaviour {
     lineRenderer.SetPosition(0, points.start);
 
     int steps = (int)(Vector3.Distance(points.start, points.end) / _deltaLengthPerStep);
-    var pointsBuffer = new List<Vector3>();
     for (int i = 0; i <= steps; i++) {
       float t = Mathf.SmoothStep(0, 1, (float)i / (float)steps);
-      var p = Vector3.Lerp(points.start, points.end, t);
-      pointsBuffer.Add(p);
-      lineRenderer.SetPosition(1, p);
+      lineRenderer.SetPosition(1, Vector3.Lerp(points.start, points.end, t));
       yield return null;
     }
     lineRenderer.SetPosition(1, points.end);
@@ -202,11 +202,6 @@ public class GameManager : MonoBehaviour {
       DrawLabel(labelText, points.start.x, points.end.x);
     }
 
-    foreach (var p in pointsBuffer) {
-      Camera.transform.position = new Vector3(p.x, p.y, _initCameraZ);
-      yield return null;
-    }
-    Camera.transform.position = new Vector3(points.end.x, points.end.y, _initCameraZ);
     switch (direction) {
       case LineDirection.Down:
         _currentStep++;
@@ -218,6 +213,35 @@ public class GameManager : MonoBehaviour {
         _currentCallDepth--;
         break;
     }
+    if (_currentCallDepth > _maxCallDepth) {
+      _maxCallDepth = _currentCallDepth;
+    }
+  }
+
+  // Moves the main camera to the center of the graph and tries to cover the whole graph in the
+  // camera view by adjusting the camera's z position.
+  private IEnumerator AutoPositionCamera(LineDirection direction) {
+    float steps = direction == LineDirection.Down ? _currentStep + 1 : _currentStep;
+    float maxDepth =
+        (direction == LineDirection.Right && _currentCallDepth == _maxCallDepth) ?
+            _maxCallDepth + 1 :
+            _maxCallDepth;
+    float graphWidth = maxDepth * _horizontalLength;
+    float graphHeight = steps * _verticalLength;
+    float expectedHeight = graphWidth / Camera.aspect;
+    float viewHeight = graphHeight >=  expectedHeight ? graphHeight : expectedHeight;
+    viewHeight *= _cameraViewExpandRatio;
+    var start = Camera.transform.position;
+    float endX = graphWidth / 2;
+    float endY = - graphHeight / 2;
+    float endZ = - viewHeight / 2 / Mathf.Tan(Camera.fieldOfView / 2 * Mathf.Deg2Rad);
+    var end = new Vector3(endX, endY, endZ);
+    for (int i = 0; i <= _cameraMoveSteps; i++) {
+      float t = Mathf.SmoothStep(0, 1, (float)i / (float)_cameraMoveSteps);
+      Camera.transform.position = Vector3.Lerp(start, end, t);
+      yield return null;
+    }
+    Camera.transform.position = end;
   }
 
   private (Vector3 start, Vector3 end) CalcLinePosition(LineDirection direction) {

@@ -110,7 +110,7 @@ public class CodeExecutor
 
   // The coroutine to execute the source code.
   private IEnumerator RunProgram(string source) {
-    _gameManager.QueueProgramStarted("Start");
+    _gameManager.QueueProgramStarted();
     var collection = new DiagnosticCollection();
     if (_engine.Compile(source, _defaultModuleName, collection)) {
       if (_engine.Run(collection)) {
