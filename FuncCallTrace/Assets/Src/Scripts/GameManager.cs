@@ -35,9 +35,9 @@ public class GameManager : MonoBehaviour {
   private const float _labelOffsetY = 0.4f;
   private const float _playSoundDelay = 0.1f;
   private const float _deltaLengthPerStep = 0.1f;
-  private const float _startLineWidth = .08f;
-  private const float _endLineWidth = .08f;
-  private const float _cameraViewExpandRatio = 1.3f;
+  private const float _startLineWidth = 0.15f;
+  private const float _endLineWidth = 0.08f;
+  private const float _cameraViewExpandRatio = 1.1f;
   private const int _cameraMoveSteps = 10;
   private readonly ActionQueue _actionQueue = new ActionQueue();
   private readonly List<GameObject> _graphElements = new List<GameObject>();

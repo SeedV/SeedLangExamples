@@ -22,7 +22,6 @@ def move(n, src, dest, tmp):
     print(src + ' -> ' + dest)
     move(n - 1, tmp, dest, src)
 
-
-num = 3
+num = 2
 move(num, 'A', 'C', 'B')";
 }
