@@ -26,6 +26,8 @@ Result: 🍎🍎🍎🍎🍎🍎🍎
 A visualizer that traces the function call history of a script program then
 draws the function call graph with Unity animations.
 
+![FuncCallTrace Demo](images/funccalltrace_demo.gif)
+
 ## SeedLangUnityCommon
 
 Common libraries for integrating SeedLang with Unity games or applications:
@@ -41,7 +43,11 @@ Common libraries for integrating SeedLang with Unity games or applications:
 A Unity project that visualizes common sorting algorithms with the visualization
 framework of SeedLang.
 
+![SortingBot Demo](images/sortingbot_demo.gif)
+
 ## XyzWalker
 
 A simple and interesting example that shows how to run a python script with
 SeedLang and visualize the values of a set of variables during the runtime.
+
+![XyzWalker](images/xyzwalker_demo.gif)
