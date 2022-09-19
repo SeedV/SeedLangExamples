@@ -181,22 +181,24 @@ public class CodeExecutor
   // The coroutine to execute the source code.
   private IEnumerator RunProgram(string source) {
     var collection = new DiagnosticCollection();
-    if (_engine.Compile(source, _defaultModuleName, collection)) {
-      if (_engine.Run(collection)) {
-        yield return new UnityEngine.WaitUntil(() => _gameManager.IsActionQueueEmpty);
-        while (!Stopping && !_engine.IsStopped) {
-          if (_engine.Continue(collection)) {
-            yield return new UnityEngine.WaitUntil(() => _gameManager.IsActionQueueEmpty);
-          } else {
-            _gameManager.QueueOutputSeedLangDiagnostics(collection);
-          }
+    if (_engine.Compile(source, _defaultModuleName, collection) && _engine.Run(collection)) {
+      yield return new UnityEngine.WaitUntil(() => _gameManager.IsActionQueueEmpty);
+      while (!Stopping && !_engine.IsStopped) {
+        if (_engine.Continue(collection)) {
+          yield return new UnityEngine.WaitUntil(() => _gameManager.IsActionQueueEmpty);
+        } else {
+          _gameManager.QueueOutputSeedLangDiagnostics(collection);
+          Stopping = true;
+          break;
         }
-        if (Stopping) {
-          _engine.Stop();
-          Stopping = false;
-        }
-        _gameManager.QueueShowIndexBall(_currentIndexVariableValue, false);
-        _gameManager.QueueHighlightCodeLineAndWait(-1, 0);
+      }
+      if (Stopping) {
+        _engine.Stop();
+        Stopping = false;
+      }
+      _gameManager.QueueShowIndexBall(_currentIndexVariableValue, false);
+      _gameManager.QueueHighlightCodeLineAndWait(-1, 0);
+      if (collection.Diagnostics.Count <= 0) {
         _gameManager.QueueOutputTextInfo("Done.");
       }
     } else {

@@ -93,7 +93,7 @@ public class GameManager : MonoBehaviour {
 
   public void QueueVisualizeX(float x) {
     if (x < 0 || x > Blocks.Size - 1) {
-      QueueOutputTextInfo($"x is converted to [0, {Blocks.Size - 1}]");
+      QueueOutputTextInfo($"x is clamped to [0, {Blocks.Size - 1}]");
     }
     int value = Utils.Modulo((int)x, Blocks.Size);
     if (_currentValue.x != value) {
@@ -104,7 +104,7 @@ public class GameManager : MonoBehaviour {
 
   public void QueueVisualizeY(float y) {
     if (y < 0 || y > Blocks.Size - 1) {
-      QueueOutputTextInfo($"y is converted to [0, {Blocks.Size - 1}]");
+      QueueOutputTextInfo($"y is clamped to [0, {Blocks.Size - 1}]");
     }
     int value = Utils.Modulo((int)y, Blocks.Size);
     if (_currentValue.y != value) {
@@ -115,7 +115,7 @@ public class GameManager : MonoBehaviour {
 
   public void QueueVisualizeZ(float z) {
     if (z < 0 || z > Blocks.ColorNum - 1) {
-      QueueOutputTextInfo($"z is converted to [0, {Blocks.ColorNum - 1}]");
+      QueueOutputTextInfo($"z is clamped to [0, {Blocks.ColorNum - 1}]");
     }
     int colorIndex = Utils.Modulo((int)z, Blocks.ColorNum);
     int soundIndex = Utils.Modulo((int)z, AudioClips.Length);
